@@ -116,7 +116,7 @@ export function ComparisonResults({ results, selectedDrug, onViewMap }: Comparis
     return (
         <div className="space-y-6">
             {/* Header con información del medicamento */}
-            <Card className="p-4 sm:p-6 bg-gradient-to-r from-[#7C3AED]/10 to-[#A78BFA]/10 border-[#7C3AED]/20">
+            <Card className="p-4 sm:p-6 bg-gradient-to-r from-[#db1a85]/10 to-[#0ec1ac]/10 border-[#db1a85]/20">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -147,7 +147,7 @@ export function ComparisonResults({ results, selectedDrug, onViewMap }: Comparis
                                 <span className="font-semibold">Ahorra hasta {savings.savingsPercentage.toFixed(0)}%</span>
                             </div>
                         )}
-                        <Button variant="link" className="p-0 h-auto text-[#7C3AED]" onClick={() => setIsDetailModalOpen(true)}>
+                        <Button variant="link" className="p-0 h-auto text-[#db1a85]" onClick={() => setIsDetailModalOpen(true)}>
                             Ver detalles del medicamento
                         </Button>
                     </div>
@@ -164,7 +164,7 @@ export function ComparisonResults({ results, selectedDrug, onViewMap }: Comparis
                         variant={sortBy === "price" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setSortBy("price")}
-                        className={sortBy === "price" ? "bg-[#7C3AED] hover:bg-[#6D28D9] text-white" : "bg-transparent"}
+                        className={sortBy === "price" ? "bg-[#db1a85] hover:bg-[#b8146f] text-white" : "bg-transparent"}
                     >
                         Ordenar por precio
                     </Button>
@@ -172,7 +172,7 @@ export function ComparisonResults({ results, selectedDrug, onViewMap }: Comparis
                         variant={sortBy === "distance" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setSortBy("distance")}
-                        className={sortBy === "distance" ? "bg-[#7C3AED] hover:bg-[#6D28D9] text-white" : "bg-transparent"}
+                        className={sortBy === "distance" ? "bg-[#db1a85] hover:bg-[#b8146f] text-white" : "bg-transparent"}
                     >
                         Ordenar por distancia
                     </Button>
@@ -234,7 +234,7 @@ export function ComparisonResults({ results, selectedDrug, onViewMap }: Comparis
                                 {/* Precio y acciones */}
                                 <div className="flex flex-col items-start lg:items-end gap-3">
                                     <div className="text-right">
-                                        <p className="text-2xl sm:text-3xl font-bold text-[#7C3AED]">{formatPrice(result.price.price)}</p>
+                                        <p className="text-2xl sm:text-3xl font-bold text-[#db1a85]">{formatPrice(result.price.price)}</p>
                                         {result.drug.isGeneric && (
                                             <Badge variant="secondary" className="mt-1 text-xs">
                                                 Genérico
@@ -293,3 +293,4 @@ export function ComparisonResults({ results, selectedDrug, onViewMap }: Comparis
         </div>
     )
 }
+

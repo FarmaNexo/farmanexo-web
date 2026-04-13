@@ -59,6 +59,8 @@ proyecto-farma-nexo/
 │   ├── login/                   # Página de inicio de sesión
 │   ├── registro/                # Página de registro
 │   ├── recuperar-contrasena/   # Recuperación de contraseña
+│   ├── perfil/                  # Perfil de usuario (privado)
+│   ├── ordenes/                 # Mis Órdenes (privado)
 │   ├── layout.tsx               # Layout raíz con providers
 │   ├── page.tsx                 # Página principal (hero + búsqueda)
 │   └── globals.css              # Estilos globales y tema
@@ -188,6 +190,9 @@ npm run lint     # Linter
 # No requiere variables de entorno para funcionalidad básica
 # El AI Gateway de Vercel funciona automáticamente al desplegar
 
+# Google Maps (requerido para mostrar el mapa):
+# NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=tu_api_key
+
 # Opcional para desarrollo local del chatbot:
 # OPENAI_API_KEY=tu_api_key
 # ANTHROPIC_API_KEY=tu_api_key
@@ -237,3 +242,4 @@ Este proyecto es privado y confidencial. Todos los derechos reservados © 2025 F
 ---
 
 **Hecho en Lima, Perú**
+

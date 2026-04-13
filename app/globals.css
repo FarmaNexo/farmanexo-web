@@ -43,64 +43,68 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* Brand colors - Nueva paleta FarmaNexo (Morado/Violeta) */
-  --color-brand-purple: var(--brand-purple);
-  --color-brand-purple-dark: var(--brand-purple-dark);
-  --color-brand-purple-light: var(--brand-purple-light);
-  --color-brand-coral: var(--brand-coral);
+  /* Brand colors - FarmaNexo (Pink/Teal) */
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-pink-dark: var(--brand-pink-dark);
+  --color-brand-teal-dark: var(--brand-teal-dark);
   --color-brand-lavender: var(--brand-lavender);
+  --color-brand-coral: var(--brand-coral);
   --color-brand-success: var(--brand-success);
 
-  /* Mantener compatibilidad con nombres anteriores */
-  --color-brand-pink: var(--brand-purple);
-  --color-brand-teal: var(--brand-purple-light);
+  /* Compatibilidad con nombres anteriores */
+  --color-brand-purple: var(--brand-pink);
+  --color-brand-purple-dark: var(--brand-pink-dark);
+  --color-brand-purple-light: var(--brand-teal);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: #FAFAFF;
+  --background: #fafafa;
   --foreground: #1a1a2e;
   --card: #ffffff;
   --card-foreground: #1a1a2e;
   --popover: #ffffff;
   --popover-foreground: #1a1a2e;
-  --primary: #7C3AED;
+  --primary: #db1a85;
   --primary-foreground: #ffffff;
-  --secondary: #F5F3FF;
-  --secondary-foreground: #5B21B6;
-  --muted: #F5F3FF;
-  --muted-foreground: #6B7280;
-  --accent: #F5F3FF;
-  --accent-foreground: #7C3AED;
-  --destructive: #EF4444;
-  --border: #E5E7EB;
-  --input: #E5E7EB;
-  --ring: #7C3AED;
-  --chart-1: #7C3AED;
-  --chart-2: #A78BFA;
-  --chart-3: #C4B5FD;
-  --chart-4: #F87171;
-  --chart-5: #22C55E;
-  --sidebar: #5B21B6;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #7C3AED;
+  --secondary: #e6fbf8;
+  --secondary-foreground: #0a9b8a;
+  --muted: #f5f5f7;
+  --muted-foreground: #6b7280;
+  --accent: #fce7f3;
+  --accent-foreground: #b8146f;
+  --destructive: #ef4444;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #db1a85;
+  --chart-1: #db1a85;
+  --chart-2: #0ec1ac;
+  --chart-3: #f472b6;
+  --chart-4: #f87171;
+  --chart-5: #22c55e;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a2e;
+  --sidebar-primary: #db1a85;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #6D28D9;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #6D28D9;
-  --sidebar-ring: #A78BFA;
+  --sidebar-accent: #e6fbf8;
+  --sidebar-accent-foreground: #0a9b8a;
+  --sidebar-border: #f3d6e8;
+  --sidebar-ring: #db1a85;
 
-  /* Nueva paleta de colores FarmaNexo */
-  --brand-purple: #7C3AED;
-  --brand-purple-dark: #5B21B6;
-  --brand-purple-light: #A78BFA;
-  --brand-coral: #F87171;
-  --brand-lavender: #F5F3FF;
-  --brand-success: #22C55E;
+  /* Paleta de marca */
+  --brand-pink: #db1a85;
+  --brand-pink-dark: #b8146f;
+  --brand-teal: #0ec1ac;
+  --brand-teal-dark: #0a9b8a;
+  --brand-lavender: #fdf2f8;
+  --brand-coral: #f87171;
+  --brand-success: #22c55e;
 
   /* Compatibilidad */
-  --brand-pink: #7C3AED;
-  --brand-teal: #A78BFA;
+  --brand-purple: #db1a85;
+  --brand-purple-dark: #b8146f;
+  --brand-purple-light: #0ec1ac;
 }
 
 .dark {
@@ -110,43 +114,45 @@
   --card-foreground: #f5f5f7;
   --popover: #1a1a2e;
   --popover-foreground: #f5f5f7;
-  --primary: #A78BFA;
+  --primary: #f25fb5;
   --primary-foreground: #0f0f1a;
-  --secondary: #2d2d44;
-  --secondary-foreground: #C4B5FD;
+  --secondary: #103b3a;
+  --secondary-foreground: #a7f3e7;
   --muted: #2d2d44;
-  --muted-foreground: #9CA3AF;
-  --accent: #2d2d44;
-  --accent-foreground: #A78BFA;
-  --destructive: #F87171;
+  --muted-foreground: #9ca3af;
+  --accent: #2a1230;
+  --accent-foreground: #f7a1d4;
+  --destructive: #f87171;
   --border: #3d3d5c;
   --input: #3d3d5c;
-  --ring: #A78BFA;
-  --chart-1: #A78BFA;
-  --chart-2: #C4B5FD;
-  --chart-3: #DDD6FE;
-  --chart-4: #F87171;
-  --chart-5: #4ADE80;
+  --ring: #f25fb5;
+  --chart-1: #f25fb5;
+  --chart-2: #2dd4bf;
+  --chart-3: #f9a8d4;
+  --chart-4: #f87171;
+  --chart-5: #4ade80;
   --sidebar: #1a1a2e;
   --sidebar-foreground: #f5f5f7;
-  --sidebar-primary: #A78BFA;
+  --sidebar-primary: #f25fb5;
   --sidebar-primary-foreground: #0f0f1a;
-  --sidebar-accent: #2d2d44;
-  --sidebar-accent-foreground: #C4B5FD;
+  --sidebar-accent: #103b3a;
+  --sidebar-accent-foreground: #a7f3e7;
   --sidebar-border: #3d3d5c;
-  --sidebar-ring: #A78BFA;
+  --sidebar-ring: #f25fb5;
 
   /* Colores de marca en modo oscuro */
-  --brand-purple: #A78BFA;
-  --brand-purple-dark: #7C3AED;
-  --brand-purple-light: #C4B5FD;
-  --brand-coral: #F87171;
-  --brand-lavender: #2d2d44;
-  --brand-success: #4ADE80;
+  --brand-pink: #f25fb5;
+  --brand-pink-dark: #db1a85;
+  --brand-teal: #2dd4bf;
+  --brand-teal-dark: #0f766e;
+  --brand-lavender: #2a1230;
+  --brand-coral: #f87171;
+  --brand-success: #4ade80;
 
   /* Compatibilidad */
-  --brand-pink: #A78BFA;
-  --brand-teal: #C4B5FD;
+  --brand-purple: #f25fb5;
+  --brand-purple-dark: #db1a85;
+  --brand-purple-light: #2dd4bf;
 }
 
 @layer base {

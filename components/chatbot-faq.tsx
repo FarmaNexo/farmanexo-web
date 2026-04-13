@@ -29,10 +29,10 @@ const faqs = [
 
 export function ChatbotFAQ() {
     return (
-        <Card className="p-6 border-[#7C3AED]/20">
+        <Card className="p-6 border-[#db1a85]/20">
             <div className="flex items-center gap-3 mb-6">
-                <div className="rounded-full bg-[#7C3AED]/10 p-3">
-                    <HelpCircle className="size-6 text-[#7C3AED]" />
+                <div className="rounded-full bg-[#db1a85]/10 p-3">
+                    <HelpCircle className="size-6 text-[#db1a85]" />
                 </div>
                 <div>
                     <h2 className="text-xl font-bold">Preguntas Frecuentes</h2>
@@ -51,3 +51,4 @@ export function ChatbotFAQ() {
         </Card>
     )
 }
+

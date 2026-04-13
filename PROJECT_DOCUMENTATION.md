@@ -27,7 +27,7 @@ El proyecto utiliza tecnologías modernas para asegurar rendimiento, escalabilid
 - **Estilos**: `Tailwind CSS v4`
 - **Componentes UI**: `shadcn/ui` (basado en Radix UI)
 - **Gestión de Estado**: `Zustand`
-- **Mapas**: `Google Maps API`
+- **Mapas**: `Google Maps API` (requiere `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` para renderizar el mapa)
 
 ### Backend & Servicios
 - **IA**: `Vercel AI SDK v5` (Integración con OpenAI/Anthropic)
@@ -54,6 +54,10 @@ El proyecto sigue la estructura estándar de **Next.js App Router**.
 | `app/catalogo/` | Catálogo navegable de medicamentos. |
 | `app/medicamento/[id]/` | Página dinámica de detalle del producto. |
 | `app/login/` | Pantalla de inicio de sesión. |
+| `app/registro/` | Pantalla de registro. |
+| `app/recuperar-contrasena/` | Recuperación de contraseña. |
+| `app/perfil/` | Perfil de usuario (privado). |
+| `app/ordenes/` | Mis Órdenes (privado). |
 | `app/layout.tsx` | Layout raíz (Root Layout) con Providers globales. |
 | `app/page.tsx` | Landing page (Hero section + Búsqueda rápida). |
 
@@ -143,3 +147,5 @@ Para una descripción detallada de la arquitectura del servidor, base de datos y
 - [ ] Optimizar carga de mapas.
 - [ ] Implementar PWA (Progressive Web App).
 - [ ] Añadir notificaciones push.
+
+

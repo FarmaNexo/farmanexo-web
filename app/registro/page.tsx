@@ -165,10 +165,10 @@ export default function RegisterPage() {
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#7C3AED] text-white">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#db1a85] text-white">
                         <span className="text-xl font-bold">F</span>
                     </div>
-                    <span className="text-2xl font-bold text-[#7C3AED]">
+                    <span className="text-2xl font-bold text-[#db1a85]">
                         FarmaNexo
                     </span>
                 </Link>
@@ -328,14 +328,14 @@ export default function RegisterPage() {
                             {/* Terms */}
                             <p className="text-xs text-muted-foreground">
                                 Al crear una cuenta, aceptas nuestros{" "}
-                                <span className="text-[#7C3AED] cursor-pointer hover:underline">Términos de Servicio</span> y{" "}
-                                <span className="text-[#7C3AED] cursor-pointer hover:underline">Política de Privacidad</span>.
+                                <span className="text-[#db1a85] cursor-pointer hover:underline">Términos de Servicio</span> y{" "}
+                                <span className="text-[#db1a85] cursor-pointer hover:underline">Política de Privacidad</span>.
                             </p>
 
                             {/* Submit */}
                             <Button
                                 type="submit"
-                                className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white transition-colors"
+                                className="w-full bg-[#db1a85] hover:bg-[#b8146f] text-white transition-colors"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
@@ -376,3 +376,4 @@ export default function RegisterPage() {
         </div>
     )
 }
+

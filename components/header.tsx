@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useFarmaNexoStore } from "@/lib/farmanexo-store"
-import { useAuthStore, initializeAuth } from "@/lib/auth-store"
+import { useIsAuthenticated, useLogout } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { OrdersModal } from "@/components/orders-modal"
@@ -31,7 +31,8 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Auth state
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated } = useIsAuthenticated()
+  const logoutMutation = useLogout()
 
   // App state
   const shoppingList = useFarmaNexoStore((state) => state.shoppingList)
@@ -40,8 +41,6 @@ export function Header() {
 
   useEffect(() => {
     setMounted(true)
-    // Inicializar auth desde localStorage
-    initializeAuth()
   }, [])
 
   const ordersCount = useMemo(() => {
@@ -70,8 +69,7 @@ export function Header() {
   }
 
   const handleLogout = () => {
-    logout()
-    router.push("/")
+    logoutMutation.mutate()
     setMobileMenuOpen(false)
   }
 
@@ -93,10 +91,10 @@ export function Header() {
           onClick={navigateToHome}
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7C3AED] text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#db1a85] text-white">
             <Pill className="size-4" />
           </div>
-          <span className="hidden font-bold sm:inline-block text-[#7C3AED]">
+          <span className="hidden font-bold sm:inline-block text-[#db1a85]">
             FarmaNexo
           </span>
         </button>
@@ -130,7 +128,7 @@ export function Header() {
             className="hidden lg:flex items-center gap-1 max-w-40"
             onClick={() => setShowLocationModal(true)}
           >
-            <MapPin className="h-4 w-4 text-[#7C3AED] shrink-0" />
+            <MapPin className="h-4 w-4 text-[#db1a85] shrink-0" />
             <span className="text-sm truncate">{locationText}</span>
           </Button>
 
@@ -147,7 +145,7 @@ export function Header() {
                   {favoriteCount > 0 && (
                     <Badge
                       variant="destructive"
-                      className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-[#7C3AED] border-[#7C3AED]"
+                      className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-[#db1a85] border-[#db1a85]"
                     >
                       {favoriteCount}
                     </Badge>
@@ -172,16 +170,18 @@ export function Header() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-2">
-                      <div className="h-6 w-6 rounded-full bg-[#7C3AED] flex items-center justify-center text-white text-xs font-medium">
-                        {user?.name?.charAt(0).toUpperCase() || "U"}
+                      <div className="h-6 w-6 rounded-full bg-[#db1a85] flex items-center justify-center text-white text-xs font-medium">
+                        {user?.full_name?.charAt(0).toUpperCase() || "U"}
                       </div>
-                      <span className="hidden lg:inline max-w-24 truncate">{user?.name?.split(" ")[0]}</span>
+                      <span className="hidden lg:inline max-w-24 truncate">{user?.full_name?.split(" ")[0]}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <div className="px-2 py-1.5">
-                      <p className="text-sm font-medium truncate">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <p className="text-sm font-medium truncate">{user?.full_name}</p>
+                      {user?.email && (
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      )}
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setShowProfileModal(true)}>
@@ -212,7 +212,7 @@ export function Header() {
                     <span className="hidden lg:inline">Iniciar sesión</span>
                   </Link>
                 </Button>
-                <Button size="sm" className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white" asChild>
+                <Button size="sm" className="bg-[#db1a85] hover:bg-[#b8146f] text-white" asChild>
                   <Link href="/registro" className="gap-2">
                     <UserPlus className="h-4 w-4" />
                     <span className="hidden lg:inline">Registrarse</span>
@@ -230,7 +230,7 @@ export function Header() {
                 {isAuthenticated && (ordersCount > 0 || favoriteCount > 0) && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-[#7C3AED]"
+                    className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-[#db1a85]"
                   >
                     {ordersCount + favoriteCount}
                   </Badge>
@@ -241,18 +241,20 @@ export function Header() {
               <div className="grid gap-6 py-6">
                 {isAuthenticated ? (
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="h-10 w-10 rounded-full bg-[#7C3AED] flex items-center justify-center text-white font-medium">
-                      {user?.name?.charAt(0).toUpperCase() || "U"}
+                    <div className="h-10 w-10 rounded-full bg-[#db1a85] flex items-center justify-center text-white font-medium">
+                      {user?.full_name?.charAt(0).toUpperCase() || "U"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <p className="font-medium truncate">{user?.full_name}</p>
+                      {user?.email && (
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      )}
                     </div>
                   </div>
                 ) : (
                   <div className="grid gap-2">
                     <Button
-                      className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white"
+                      className="w-full bg-[#db1a85] hover:bg-[#b8146f] text-white"
                       onClick={() => handleMobileAction(() => router.push("/login"))}
                     >
                       <LogIn className="mr-2 h-4 w-4" />
@@ -260,7 +262,7 @@ export function Header() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="w-full bg-transparent border-[#7C3AED] text-[#7C3AED]"
+                      className="w-full bg-transparent border-[#db1a85] text-[#db1a85]"
                       onClick={() => handleMobileAction(() => router.push("/registro"))}
                     >
                       <UserPlus className="mr-2 h-4 w-4" />
@@ -379,3 +381,4 @@ export function Header() {
     </header>
   )
 }
+

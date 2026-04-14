@@ -1,13 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { MapPin, Navigation, Phone, Clock } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { MapPin, Navigation, Phone, Clock, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { PharmacyBranch, LocationData } from "@/lib/types"
-import { calculateDistance } from "@/lib/search-service"
+
+declare global {
+    interface Window {
+        google?: any
+        __googleMapsScriptLoading?: Promise<any>
+    }
+}
 
 interface PharmacyMapProps {
     branches: PharmacyBranch[]
@@ -18,6 +23,11 @@ interface PharmacyMapProps {
 
 export function PharmacyMap({ branches, userLocation, selectedBranchId, onBranchSelect }: PharmacyMapProps) {
     const [selectedBranch, setSelectedBranch] = useState<PharmacyBranch | null>(null)
+    const [mapError, setMapError] = useState<string | null>(null)
+    const mapContainerRef = useRef<HTMLDivElement>(null)
+    const mapInstanceRef = useRef<any>(null)
+    const markersRef = useRef<any[]>([])
+    const userMarkerRef = useRef<any>(null)
 
     useEffect(() => {
         if (selectedBranchId) {
@@ -38,82 +48,162 @@ export function PharmacyMap({ branches, userLocation, selectedBranchId, onBranch
         window.open(url, "_blank")
     }
 
-    // Calcular centro del mapa
-    const mapCenter = userLocation || (branches.length > 0 ? branches[0].coordinates : { lat: -12.0464, lng: -77.0306 })
+    const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
+
+    const loadGoogleMaps = (apiKey: string) => {
+        if (typeof window === "undefined") {
+            return Promise.reject(new Error("Google Maps solo está disponible en el navegador"))
+        }
+        if (window.google?.maps) {
+            return Promise.resolve(window.google.maps)
+        }
+        if (window.__googleMapsScriptLoading) {
+            return window.__googleMapsScriptLoading
+        }
+        window.__googleMapsScriptLoading = new Promise((resolve, reject) => {
+            const script = document.createElement("script")
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly`
+            script.async = true
+            script.defer = true
+            script.onload = () => resolve(window.google.maps)
+            script.onerror = () => reject(new Error("No se pudo cargar Google Maps"))
+            document.head.appendChild(script)
+        })
+        return window.__googleMapsScriptLoading
+    }
+
+    const clearMarkers = () => {
+        markersRef.current.forEach((marker) => marker.setMap(null))
+        markersRef.current = []
+        if (userMarkerRef.current) {
+            userMarkerRef.current.setMap(null)
+            userMarkerRef.current = null
+        }
+    }
+
+    const getMapCenter = () => {
+        if (userLocation) return userLocation
+        if (branches.length > 0) return branches[0].coordinates
+        return { lat: -12.0464, lng: -77.0306 }
+    }
+
+    useEffect(() => {
+        if (!mapContainerRef.current) return
+        if (!googleMapsApiKey) {
+            setMapError("Falta configurar la API Key de Google Maps para mostrar el mapa.")
+            return
+        }
+
+        let cancelled = false
+
+        loadGoogleMaps(googleMapsApiKey)
+            .then((googleMaps) => {
+                if (cancelled || !mapContainerRef.current) return
+
+                if (!mapInstanceRef.current) {
+                    mapInstanceRef.current = new googleMaps.Map(mapContainerRef.current, {
+                        center: getMapCenter(),
+                        zoom: 13,
+                        fullscreenControl: false,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                    })
+                }
+
+                const map = mapInstanceRef.current
+                const bounds = new googleMaps.LatLngBounds()
+
+                clearMarkers()
+
+                if (userLocation) {
+                    const userPosition = new googleMaps.LatLng(userLocation.lat, userLocation.lng)
+                    userMarkerRef.current = new googleMaps.Marker({
+                        position: userPosition,
+                        map,
+                        title: "Tu ubicación",
+                        icon: {
+                            path: googleMaps.SymbolPath.CIRCLE,
+                            scale: 7,
+                            fillColor: "#0ec1ac",
+                            fillOpacity: 1,
+                            strokeColor: "#ffffff",
+                            strokeWeight: 2,
+                        },
+                    })
+                    bounds.extend(userPosition)
+                }
+
+                branches.forEach((branch) => {
+                    const position = new googleMaps.LatLng(branch.coordinates.lat, branch.coordinates.lng)
+                    const isSelected = selectedBranchId === branch.id
+                    const marker = new googleMaps.Marker({
+                        position,
+                        map,
+                        title: branch.pharmacyName,
+                        icon: {
+                            path: googleMaps.SymbolPath.CIRCLE,
+                            scale: isSelected ? 9 : 7,
+                            fillColor: isSelected ? "#db1a85" : "#0ec1ac",
+                            fillOpacity: 1,
+                            strokeColor: "#ffffff",
+                            strokeWeight: 2,
+                        },
+                    })
+                    marker.addListener("click", () => handleBranchClick(branch))
+                    markersRef.current.push(marker)
+                    bounds.extend(position)
+                })
+
+                if (!bounds.isEmpty()) {
+                    map.fitBounds(bounds, 60)
+                } else {
+                    map.setCenter(getMapCenter())
+                    map.setZoom(13)
+                }
+                setMapError(null)
+            })
+            .catch((error) => {
+                console.error("[v0] Error cargando Google Maps:", error)
+                setMapError("No se pudo cargar el mapa. Verifica tu conexión o API Key.")
+            })
+
+        return () => {
+            cancelled = true
+        }
+    }, [googleMapsApiKey, branches, userLocation, selectedBranchId])
 
     return (
         <div className="space-y-4">
-            {/* Mapa simulado con pins */}
             <Card className="relative overflow-hidden bg-muted" style={{ height: "500px" }}>
-                {/* Indicador de ubicación del usuario */}
-                {userLocation && (
-                    <div
-                        className="absolute z-10 transform -translate-x-1/2 -translate-y-1/2"
-                        style={{
-                            left: "50%",
-                            top: "50%",
-                        }}
-                    >
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-brand-teal rounded-full animate-ping opacity-75" />
-                            <div className="relative bg-brand-teal rounded-full p-2">
-                                <Navigation className="size-6 text-white" />
+                {mapError ? (
+                    <div className="h-full w-full flex items-center justify-center p-6">
+                        <div className="max-w-md text-center space-y-3">
+                            <AlertCircle className="size-10 text-destructive mx-auto" />
+                            <h3 className="font-semibold text-lg">Mapa no disponible</h3>
+                            <p className="text-sm text-muted-foreground">{mapError}</p>
+                            <p className="text-xs text-muted-foreground">
+                                Configura `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` para habilitar el mapa.
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div ref={mapContainerRef} className="h-full w-full" />
+                        {branches.length === 0 && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="bg-background/80 backdrop-blur-sm p-6 rounded-lg text-center max-w-md">
+                                    <MapPin className="size-12 text-brand-teal mx-auto mb-2" />
+                                    <h3 className="font-semibold text-lg">Mapa de farmacias</h3>
+                                    <p className="text-sm text-muted-foreground mt-2">
+                                        Busca un medicamento y selecciona tu ubicación para ver farmacias cercanas.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap">
-                            <Badge className="bg-brand-teal">Tu ubicación</Badge>
-                        </div>
-                    </div>
+                        )}
+                    </>
                 )}
-
-                {/* Pins de farmacias */}
-                {branches.map((branch, index) => {
-                    const distance = userLocation
-                        ? calculateDistance(userLocation.lat, userLocation.lng, branch.coordinates.lat, branch.coordinates.lng)
-                        : null
-
-                    // Posicionar pins de manera visual alrededor del centro
-                    const angle = (index / branches.length) * 2 * Math.PI
-                    const radius = 150 + (distance ? Math.min(distance * 20, 100) : 50)
-                    const x = 50 + Math.cos(angle) * (radius / 500) * 50
-                    const y = 50 + Math.sin(angle) * (radius / 500) * 50
-
-                    return (
-                        <button
-                            key={branch.id}
-                            className="absolute z-20 transform -translate-x-1/2 -translate-y-full cursor-pointer hover:scale-110 transition-transform"
-                            style={{
-                                left: `${x}%`,
-                                top: `${y}%`,
-                            }}
-                            onClick={() => handleBranchClick(branch)}
-                        >
-                            <MapPin
-                                className={`size-8 ${selectedBranch?.id === branch.id
-                                        ? "text-brand-pink fill-brand-pink"
-                                        : "text-brand-teal fill-brand-teal"
-                                    }`}
-                            />
-                            {distance && (
-                                <Badge className="absolute top-full left-1/2 -translate-x-1/2 mt-1 text-xs">{distance} km</Badge>
-                            )}
-                        </button>
-                    )
-                })}
-
-                {/* Overlay con instrucciones */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-background/80 backdrop-blur-sm p-6 rounded-lg text-center max-w-md">
-                        <MapPin className="size-12 text-brand-teal mx-auto mb-2" />
-                        <h3 className="font-semibold text-lg">Mapa de farmacias</h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                            Haz clic en los marcadores para ver detalles de cada farmacia
-                        </p>
-                    </div>
-                </div>
             </Card>
 
-            {/* Detalle de farmacia seleccionada */}
             {selectedBranch && (
                 <Dialog open={!!selectedBranch} onOpenChange={() => setSelectedBranch(null)}>
                     <DialogContent>
@@ -172,3 +262,4 @@ export function PharmacyMap({ branches, userLocation, selectedBranchId, onBranch
         </div>
     )
 }
+

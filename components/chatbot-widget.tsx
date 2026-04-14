@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useAuthStore, initializeAuth } from "@/lib/auth-store"
+import { useIsAuthenticated } from "@/hooks/use-auth"
 
 interface Message {
     id: string
@@ -20,7 +20,7 @@ interface Message {
 
 export function ChatbotWidget() {
     const router = useRouter()
-    const { isAuthenticated, user } = useAuthStore()
+    const { isAuthenticated, user } = useIsAuthenticated()
     const [mounted, setMounted] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([
@@ -39,7 +39,6 @@ export function ChatbotWidget() {
     const inputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
-        initializeAuth()
         setMounted(true)
     }, [])
 
@@ -65,7 +64,7 @@ export function ChatbotWidget() {
                 {/* Botón flotante que invita a iniciar sesión */}
                 <Button
                     onClick={() => router.push("/login")}
-                    className="fixed bottom-6 right-6 h-auto py-3 px-4 rounded-full shadow-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white z-50 gap-2"
+                    className="fixed bottom-6 right-6 h-auto py-3 px-4 rounded-full shadow-lg bg-[#db1a85] hover:bg-[#b8146f] text-white z-50 gap-2"
                     title="Inicia sesión para usar el asistente"
                 >
                     <MessageCircle className="size-5" />
@@ -96,7 +95,7 @@ export function ChatbotWidget() {
                 body: JSON.stringify({
                     message: userMessage.content,
                     sessionId,
-                    userId: user?.id,
+                    userId: user?.user_id,
                 }),
             })
 
@@ -144,7 +143,7 @@ export function ChatbotWidget() {
             {!isOpen && (
                 <Button
                     onClick={() => setIsOpen(true)}
-                    className="fixed bottom-6 right-6 size-14 rounded-full shadow-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white z-50"
+                    className="fixed bottom-6 right-6 size-14 rounded-full shadow-lg bg-[#db1a85] hover:bg-[#b8146f] text-white z-50"
                     size="icon"
                 >
                     <MessageCircle className="size-6" />
@@ -152,12 +151,12 @@ export function ChatbotWidget() {
             )}
 
             {isOpen && (
-                <Card className="fixed bottom-6 right-6 w-[90vw] max-w-[420px] h-[70vh] max-h-[600px] shadow-2xl z-50 flex flex-col border-2 border-[#7C3AED]/20">
+                <Card className="fixed bottom-6 right-6 w-[90vw] max-w-[420px] h-[70vh] max-h-[600px] shadow-2xl z-50 flex flex-col border-2 border-[#db1a85]/20">
                     {/* Header - altura fija */}
-                    <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-[#7C3AED] to-[#9333EA] text-white shrink-0">
+                    <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-[#db1a85] to-[#e14298] text-white shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="rounded-full bg-white p-2 shadow-sm">
-                                <Bot className="size-5 text-[#7C3AED]" />
+                                <Bot className="size-5 text-[#db1a85]" />
                             </div>
                             <div>
                                 <h3 className="font-semibold text-base">Orientador Farmacéutico</h3>
@@ -192,14 +191,14 @@ export function ChatbotWidget() {
                                 className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                             >
                                 {message.role === "assistant" && (
-                                    <div className="rounded-full bg-[#7C3AED]/10 p-2 shrink-0 size-9 flex items-center justify-center">
-                                        <Bot className="size-4 text-[#7C3AED]" />
+                                    <div className="rounded-full bg-[#db1a85]/10 p-2 shrink-0 size-9 flex items-center justify-center">
+                                        <Bot className="size-4 text-[#db1a85]" />
                                     </div>
                                 )}
 
                                 <div
                                     className={`rounded-2xl p-3 max-w-[75%] shadow-sm ${message.role === "user"
-                                        ? "bg-[#7C3AED] text-white rounded-tr-sm"
+                                        ? "bg-[#db1a85] text-white rounded-tr-sm"
                                         : "bg-card border border-border rounded-tl-sm"
                                         }`}
                                 >
@@ -213,8 +212,8 @@ export function ChatbotWidget() {
                                 </div>
 
                                 {message.role === "user" && (
-                                    <div className="rounded-full bg-[#7C3AED]/10 p-2 shrink-0 size-9 flex items-center justify-center">
-                                        <User className="size-4 text-[#7C3AED]" />
+                                    <div className="rounded-full bg-[#db1a85]/10 p-2 shrink-0 size-9 flex items-center justify-center">
+                                        <User className="size-4 text-[#db1a85]" />
                                     </div>
                                 )}
                             </div>
@@ -222,12 +221,12 @@ export function ChatbotWidget() {
 
                         {isLoading && (
                             <div className="flex gap-3 justify-start">
-                                <div className="rounded-full bg-[#7C3AED]/10 p-2 shrink-0 size-9 flex items-center justify-center">
-                                    <Bot className="size-4 text-[#7C3AED]" />
+                                <div className="rounded-full bg-[#db1a85]/10 p-2 shrink-0 size-9 flex items-center justify-center">
+                                    <Bot className="size-4 text-[#db1a85]" />
                                 </div>
                                 <div className="rounded-2xl p-3 bg-card border border-border shadow-sm rounded-tl-sm">
                                     <div className="flex items-center gap-2">
-                                        <Loader2 className="size-4 animate-spin text-[#7C3AED]" />
+                                        <Loader2 className="size-4 animate-spin text-[#db1a85]" />
                                         <span className="text-sm text-muted-foreground">Escribiendo...</span>
                                     </div>
                                 </div>
@@ -244,7 +243,7 @@ export function ChatbotWidget() {
                                     <Badge
                                         key={question}
                                         variant="secondary"
-                                        className="cursor-pointer hover:bg-[#7C3AED]/10 hover:text-[#7C3AED] hover:border-[#7C3AED] transition-colors text-xs py-1"
+                                        className="cursor-pointer hover:bg-[#db1a85]/10 hover:text-[#db1a85] hover:border-[#db1a85] transition-colors text-xs py-1"
                                         onClick={() => setInput(question)}
                                     >
                                         {question}
@@ -265,13 +264,13 @@ export function ChatbotWidget() {
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 disabled={isLoading}
-                                className="flex-1 focus-visible:ring-[#7C3AED]"
+                                className="flex-1 focus-visible:ring-[#db1a85]"
                             />
                             <Button
                                 onClick={handleSend}
                                 disabled={!input.trim() || isLoading}
                                 size="icon"
-                                className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white shrink-0 shadow-sm"
+                                className="bg-[#db1a85] hover:bg-[#b8146f] text-white shrink-0 shadow-sm"
                             >
                                 {isLoading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                             </Button>
@@ -282,3 +281,4 @@ export function ChatbotWidget() {
         </>
     )
 }
+

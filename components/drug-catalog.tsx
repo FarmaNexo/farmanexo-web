@@ -174,14 +174,14 @@ export function DrugCatalog({ onDrugSelect }: DrugCatalogProps) {
                             key={drug.id}
                             className={cn(
                                 "group hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-transparent",
-                                "hover:border-l-[#7C3AED]",
+                                "hover:border-l-[#db1a85]",
                             )}
                             onClick={() => handleDrugClick(drug)}
                         >
                             <CardHeader className="pb-2 sm:pb-4">
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1 min-w-0">
-                                        <CardTitle className="text-base sm:text-lg group-hover:text-[#7C3AED] transition-colors truncate">
+                                        <CardTitle className="text-base sm:text-lg group-hover:text-[#db1a85] transition-colors truncate">
                                             {drug.commercialNames?.[0] || drug.dci}
                                         </CardTitle>
                                         <CardDescription className="mt-1 text-xs sm:text-sm truncate">
@@ -194,8 +194,8 @@ export function DrugCatalog({ onDrugSelect }: DrugCatalogProps) {
                                         className={cn(
                                             "shrink-0 size-8 sm:size-9",
                                             isFavorite
-                                                ? "text-[#7C3AED] hover:text-[#7C3AED]/80"
-                                                : "text-muted-foreground hover:text-[#7C3AED]",
+                                                ? "text-[#db1a85] hover:text-[#db1a85]/80"
+                                                : "text-muted-foreground hover:text-[#db1a85]",
                                         )}
                                         onClick={(e) => handleToggleFavorite(e, drug.id)}
                                     >
@@ -235,7 +235,7 @@ export function DrugCatalog({ onDrugSelect }: DrugCatalogProps) {
                                         <div className="flex items-baseline justify-between">
                                             <span className="text-xs sm:text-sm text-muted-foreground">Desde</span>
                                             <div className="text-right">
-                                                <span className="text-xl sm:text-2xl font-bold text-[#7C3AED]">
+                                                <span className="text-xl sm:text-2xl font-bold text-[#db1a85]">
                                                     S/ {drug.minPrice.toFixed(2)}
                                                 </span>
                                             </div>
@@ -280,3 +280,4 @@ export function DrugCatalog({ onDrugSelect }: DrugCatalogProps) {
         </div>
     )
 }
+

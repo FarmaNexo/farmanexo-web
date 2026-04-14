@@ -1,97 +1,65 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuthStore, initializeAuth } from "@/lib/auth-store"
-import { Loader2 } from "lucide-react"
+import type React from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { useIsAuthenticated } from "@/hooks/use-auth";
 
 interface AuthGuardProps {
-    children: React.ReactNode
-    fallback?: React.ReactNode
+    children: React.ReactNode;
+    fallback?: React.ReactNode;
 }
 
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
-    const router = useRouter()
-    const { isAuthenticated } = useAuthStore()
-    const [isLoading, setIsLoading] = useState(true)
-
-    useEffect(() => {
-        // Inicializar auth desde localStorage
-        initializeAuth()
-
-        // Dar tiempo para que se cargue el estado
-        const timer = setTimeout(() => {
-            setIsLoading(false)
-        }, 100)
-
-        return () => clearTimeout(timer)
-    }, [])
+    const router = useRouter();
+    const { isAuthenticated, isLoading } = useIsAuthenticated();
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
-            router.push("/login")
+            router.push("/login");
         }
-    }, [isLoading, isAuthenticated, router])
+    }, [isLoading, isAuthenticated, router]);
 
     if (isLoading) {
         return (
             <div className="min-h-[400px] flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-brand-teal" />
             </div>
-        )
+        );
     }
 
     if (!isAuthenticated) {
-        if (fallback) {
-            return <>{fallback}</>
-        }
-        return null
+        return fallback ? <>{fallback}</> : null;
     }
 
-    return <>{children}</>
+    return <>{children}</>;
 }
 
-// Componente para mostrar contenido solo si está autenticado (sin redirección)
 export function AuthenticatedOnly({ children, fallback }: AuthGuardProps) {
-    const { isAuthenticated } = useAuthStore()
-    const [mounted, setMounted] = useState(false)
+    const { isAuthenticated, isLoading } = useIsAuthenticated();
 
-    useEffect(() => {
-        initializeAuth()
-        setMounted(true)
-    }, [])
-
-    if (!mounted) {
-        return null
-    }
+    if (isLoading) return null;
 
     if (!isAuthenticated) {
-        return fallback ? <>{fallback}</> : null
+        return fallback ? <>{fallback}</> : null;
     }
 
-    return <>{children}</>
+    return <>{children}</>;
 }
 
-// Hook para verificar autenticación
 export function useRequireAuth() {
-    const router = useRouter()
-    const { isAuthenticated } = useAuthStore()
-    const [isLoading, setIsLoading] = useState(true)
-
-    useEffect(() => {
-        initializeAuth()
-        setIsLoading(false)
-    }, [])
+    const router = useRouter();
+    const { isAuthenticated, isLoading } = useIsAuthenticated();
 
     const requireAuth = (callback: () => void) => {
+        if (isLoading) return;
         if (!isAuthenticated) {
-            router.push("/login")
-            return
+            router.push("/login");
+            return;
         }
-        callback()
-    }
+        callback();
+    };
 
-    return { isAuthenticated, isLoading, requireAuth }
+    return { isAuthenticated, isLoading, requireAuth };
 }

@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useAuthStore } from "@/lib/auth-store"
+import { useIsAuthenticated } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,23 +14,26 @@ import { Mail, AlertCircle, Loader2, CheckCircle2, ArrowLeft } from "lucide-reac
 
 export default function RecoverPasswordPage() {
     const router = useRouter()
-    const { resetPassword, isLoading, error, clearError, isAuthenticated } = useAuthStore()
+    const { isAuthenticated } = useIsAuthenticated()
+
+    // TODO(auth): conectar a un endpoint real cuando auth-service exponga /forgot-password.
+    // Hoy simulamos el flujo: el backend aún no tiene este endpoint.
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const [email, setEmail] = useState("")
     const [emailError, setEmailError] = useState("")
     const [success, setSuccess] = useState(false)
 
-    // Redirigir si ya está autenticado
     useEffect(() => {
         if (isAuthenticated) {
             router.push("/")
         }
     }, [isAuthenticated, router])
 
-    // Limpiar error al cambiar email
     useEffect(() => {
-        clearError()
-    }, [email, clearError])
+        setError(null)
+    }, [email])
 
     const validateEmail = (value: string) => {
         if (!value) {
@@ -50,10 +53,11 @@ export default function RecoverPasswordPage() {
 
         if (!validateEmail(email)) return
 
-        const result = await resetPassword(email)
-        if (result) {
-            setSuccess(true)
-        }
+        // Placeholder: siempre mostramos "éxito" sin filtrar si el email existe.
+        setIsLoading(true)
+        await new Promise((r) => setTimeout(r, 600))
+        setIsLoading(false)
+        setSuccess(true)
     }
 
     if (success) {
@@ -62,10 +66,10 @@ export default function RecoverPasswordPage() {
                 <div className="w-full max-w-md">
                     {/* Logo */}
                     <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#7C3AED] text-white">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#db1a85] text-white">
                             <span className="text-xl font-bold">F</span>
                         </div>
-                        <span className="text-2xl font-bold text-[#7C3AED]">
+                        <span className="text-2xl font-bold text-[#db1a85]">
                             FarmaNexo
                         </span>
                     </Link>
@@ -107,10 +111,10 @@ export default function RecoverPasswordPage() {
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#7C3AED] text-white">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#db1a85] text-white">
                         <span className="text-xl font-bold">F</span>
                     </div>
-                    <span className="text-2xl font-bold text-[#7C3AED]">
+                    <span className="text-2xl font-bold text-[#db1a85]">
                         FarmaNexo
                     </span>
                 </Link>
@@ -156,7 +160,7 @@ export default function RecoverPasswordPage() {
                             {/* Submit */}
                             <Button
                                 type="submit"
-                                className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white transition-colors"
+                                className="w-full bg-[#db1a85] hover:bg-[#b8146f] text-white transition-colors"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
@@ -183,3 +187,4 @@ export default function RecoverPasswordPage() {
         </div>
     )
 }
+

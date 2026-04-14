@@ -1,0 +1,48 @@
+# Dependencias — se instalan fresh dentro del container
+node_modules
+.pnpm-store
+
+# Builds previos — se regeneran en el builder stage
+.next
+out
+dist
+build
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Env files — NO leakear credenciales al image
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Vercel — ya no aplica
+.vercel
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts
+
+# Docker files — no se necesitan dentro del container
+Dockerfile
+.dockerignore
+
+# Docs (opcional — reducen tamanio del context)
+README.md
+*.md

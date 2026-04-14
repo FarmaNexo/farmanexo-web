@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useFarmaNexoStore } from "@/lib/farmanexo-store"
-import { useAuthStore, initializeAuth } from "@/lib/auth-store"
+import { useIsAuthenticated, useLogout } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { OrdersModal } from "@/components/orders-modal"
@@ -31,7 +31,8 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Auth state
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated } = useIsAuthenticated()
+  const logoutMutation = useLogout()
 
   // App state
   const shoppingList = useFarmaNexoStore((state) => state.shoppingList)
@@ -40,8 +41,6 @@ export function Header() {
 
   useEffect(() => {
     setMounted(true)
-    // Inicializar auth desde localStorage
-    initializeAuth()
   }, [])
 
   const ordersCount = useMemo(() => {
@@ -70,8 +69,7 @@ export function Header() {
   }
 
   const handleLogout = () => {
-    logout()
-    router.push("/")
+    logoutMutation.mutate()
     setMobileMenuOpen(false)
   }
 
@@ -173,15 +171,17 @@ export function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-2">
                       <div className="h-6 w-6 rounded-full bg-[#db1a85] flex items-center justify-center text-white text-xs font-medium">
-                        {user?.name?.charAt(0).toUpperCase() || "U"}
+                        {user?.full_name?.charAt(0).toUpperCase() || "U"}
                       </div>
-                      <span className="hidden lg:inline max-w-24 truncate">{user?.name?.split(" ")[0]}</span>
+                      <span className="hidden lg:inline max-w-24 truncate">{user?.full_name?.split(" ")[0]}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <div className="px-2 py-1.5">
-                      <p className="text-sm font-medium truncate">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <p className="text-sm font-medium truncate">{user?.full_name}</p>
+                      {user?.email && (
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      )}
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setShowProfileModal(true)}>
@@ -242,11 +242,13 @@ export function Header() {
                 {isAuthenticated ? (
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <div className="h-10 w-10 rounded-full bg-[#db1a85] flex items-center justify-center text-white font-medium">
-                      {user?.name?.charAt(0).toUpperCase() || "U"}
+                      {user?.full_name?.charAt(0).toUpperCase() || "U"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <p className="font-medium truncate">{user?.full_name}</p>
+                      {user?.email && (
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      )}
                     </div>
                   </div>
                 ) : (

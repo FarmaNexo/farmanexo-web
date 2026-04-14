@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useAuthStore } from "@/lib/auth-store"
+import { useLogin, useIsAuthenticated } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +14,10 @@ import { Eye, EyeOff, Mail, Lock, AlertCircle, Loader2 } from "lucide-react"
 
 export default function LoginPage() {
     const router = useRouter()
-    const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore()
+    const { isAuthenticated } = useIsAuthenticated()
+    const loginMutation = useLogin()
+    const isLoading = loginMutation.isPending
+    const error = loginMutation.error?.message ?? null
 
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -29,10 +32,11 @@ export default function LoginPage() {
         }
     }, [isAuthenticated, router])
 
-    // Limpiar errores al cambiar inputs
+    // Limpiar el error de la mutación al cambiar inputs
     useEffect(() => {
-        clearError()
-    }, [email, password, clearError])
+        if (loginMutation.error) loginMutation.reset()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [email, password])
 
     const validateEmail = (value: string) => {
         if (!value) {
@@ -68,10 +72,8 @@ export default function LoginPage() {
 
         if (!isEmailValid || !isPasswordValid) return
 
-        const success = await login(email, password)
-        if (success) {
-            router.push("/")
-        }
+        // onSuccess en el hook redirige a "/"
+        loginMutation.mutate({ email, password })
     }
 
     return (
@@ -175,16 +177,6 @@ export default function LoginPage() {
                             </Button>
                         </form>
 
-                        {/* Demo credentials */}
-                        <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border/50">
-                            <p className="text-xs text-muted-foreground text-center">
-                                <strong>Credenciales de prueba:</strong>
-                                <br />
-                                Email: demo@farmanexo.pe
-                                <br />
-                                Contraseña: Demo123!
-                            </p>
-                        </div>
                     </CardContent>
 
                     <CardFooter className="flex flex-col gap-4">

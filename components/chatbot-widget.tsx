@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useAuthStore, initializeAuth } from "@/lib/auth-store"
+import { useIsAuthenticated } from "@/hooks/use-auth"
 
 interface Message {
     id: string
@@ -20,7 +20,7 @@ interface Message {
 
 export function ChatbotWidget() {
     const router = useRouter()
-    const { isAuthenticated, user } = useAuthStore()
+    const { isAuthenticated, user } = useIsAuthenticated()
     const [mounted, setMounted] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([
@@ -39,7 +39,6 @@ export function ChatbotWidget() {
     const inputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
-        initializeAuth()
         setMounted(true)
     }, [])
 
@@ -96,7 +95,7 @@ export function ChatbotWidget() {
                 body: JSON.stringify({
                     message: userMessage.content,
                     sessionId,
-                    userId: user?.id,
+                    userId: user?.user_id,
                 }),
             })
 

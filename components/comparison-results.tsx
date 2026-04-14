@@ -11,10 +11,9 @@ import type { DrugComparisonResult, Drug } from "@/lib/types"
 import { calculateSavings } from "@/lib/search-service"
 import { DrugDetailModal } from "@/components/drug-detail-modal"
 import { useFarmaNexoStore } from "@/lib/farmanexo-store"
-import { useAuthStore, initializeAuth } from "@/lib/auth-store"
+import { useIsAuthenticated } from "@/hooks/use-auth"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { useEffect } from "react"
 
 interface ComparisonResultsProps {
     results: DrugComparisonResult[]
@@ -30,11 +29,7 @@ export function ComparisonResults({ results, selectedDrug, onViewMap }: Comparis
     const [addedItems, setAddedItems] = useState<Set<string>>(new Set())
 
     const { addToShoppingList } = useFarmaNexoStore()
-    const { isAuthenticated } = useAuthStore()
-
-    useEffect(() => {
-        initializeAuth()
-    }, [])
+    const { isAuthenticated } = useIsAuthenticated()
 
     const sortedResults = [...results].sort((a, b) => {
         if (sortBy === "price") {

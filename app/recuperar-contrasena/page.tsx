@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useAuthStore } from "@/lib/auth-store"
+import { useIsAuthenticated } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,23 +14,26 @@ import { Mail, AlertCircle, Loader2, CheckCircle2, ArrowLeft } from "lucide-reac
 
 export default function RecoverPasswordPage() {
     const router = useRouter()
-    const { resetPassword, isLoading, error, clearError, isAuthenticated } = useAuthStore()
+    const { isAuthenticated } = useIsAuthenticated()
+
+    // TODO(auth): conectar a un endpoint real cuando auth-service exponga /forgot-password.
+    // Hoy simulamos el flujo: el backend aún no tiene este endpoint.
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const [email, setEmail] = useState("")
     const [emailError, setEmailError] = useState("")
     const [success, setSuccess] = useState(false)
 
-    // Redirigir si ya está autenticado
     useEffect(() => {
         if (isAuthenticated) {
             router.push("/")
         }
     }, [isAuthenticated, router])
 
-    // Limpiar error al cambiar email
     useEffect(() => {
-        clearError()
-    }, [email, clearError])
+        setError(null)
+    }, [email])
 
     const validateEmail = (value: string) => {
         if (!value) {
@@ -50,10 +53,11 @@ export default function RecoverPasswordPage() {
 
         if (!validateEmail(email)) return
 
-        const result = await resetPassword(email)
-        if (result) {
-            setSuccess(true)
-        }
+        // Placeholder: siempre mostramos "éxito" sin filtrar si el email existe.
+        setIsLoading(true)
+        await new Promise((r) => setTimeout(r, 600))
+        setIsLoading(false)
+        setSuccess(true)
     }
 
     if (success) {

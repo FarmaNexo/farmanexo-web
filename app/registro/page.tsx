@@ -5,8 +5,15 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useAuthStore, type RegisterData } from "@/lib/auth-store"
+import { useRegister, useIsAuthenticated } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
+
+interface RegisterFormData {
+    name: string
+    email: string
+    password: string
+    phone?: string
+}
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -14,9 +21,12 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, Loader2, Check, X } 
 
 export default function RegisterPage() {
     const router = useRouter()
-    const { register, isLoading, error, clearError, isAuthenticated } = useAuthStore()
+    const { isAuthenticated } = useIsAuthenticated()
+    const registerMutation = useRegister()
+    const isLoading = registerMutation.isPending
+    const error = registerMutation.error?.message ?? null
 
-    const [formData, setFormData] = useState<RegisterData>({
+    const [formData, setFormData] = useState<RegisterFormData>({
         name: "",
         email: "",
         password: "",
@@ -35,10 +45,11 @@ export default function RegisterPage() {
         }
     }, [isAuthenticated, router])
 
-    // Limpiar error global al cambiar inputs
+    // Limpiar error de la mutación al cambiar inputs
     useEffect(() => {
-        clearError()
-    }, [formData, confirmPassword, clearError])
+        if (registerMutation.error) registerMutation.reset()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData, confirmPassword])
 
     // Validaciones de contraseña
     const passwordChecks = {
@@ -119,11 +130,11 @@ export default function RegisterPage() {
         if (field === "confirmPassword") {
             validateField(field, confirmPassword)
         } else {
-            validateField(field, formData[field as keyof RegisterData] || "")
+            validateField(field, formData[field as keyof RegisterFormData] || "")
         }
     }
 
-    const handleChange = (field: keyof RegisterData, value: string) => {
+    const handleChange = (field: keyof RegisterFormData, value: string) => {
         setFormData({ ...formData, [field]: value })
         if (touched[field]) {
             validateField(field, value)
@@ -139,7 +150,7 @@ export default function RegisterPage() {
 
         fields.forEach((field) => {
             setTouched((prev) => ({ ...prev, [field]: true }))
-            const value = field === "confirmPassword" ? confirmPassword : formData[field as keyof RegisterData] || ""
+            const value = field === "confirmPassword" ? confirmPassword : formData[field as keyof RegisterFormData] || ""
             if (!validateField(field, value)) {
                 isValid = false
             }
@@ -147,10 +158,19 @@ export default function RegisterPage() {
 
         if (!isValid) return
 
-        const success = await register(formData)
-        if (success) {
-            router.push("/")
-        }
+        registerMutation.mutate(
+            {
+                email: formData.email,
+                password: formData.password,
+                full_name: formData.name,
+                phone: formData.phone || undefined,
+            },
+            {
+                onSuccess: () => {
+                    router.push("/login?registered=1")
+                },
+            }
+        )
     }
 
     const PasswordCheck = ({ passed, label }: { passed: boolean; label: string }) => (

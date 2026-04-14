@@ -1,35 +1,29 @@
 # farmanexo-web — Next.js 16 standalone multi-stage
-# Stage 1: deps (solo instala dependencias — cache hit frecuente)
-# Stage 2: builder (compila la app con output=standalone)
-# Stage 3: runner (imagen final minimalista con .next/standalone)
+# Stage 1: builder (install + build en un solo stage — evita problemas con
+#                   symlinks/hardlinks de pnpm al copiar node_modules entre stages)
+# Stage 2: runner (imagen final minimalista con solo .next/standalone)
 
 # ========================================
-# Stage 1: Dependencies
+# Stage 1: Builder
 # ========================================
-FROM node:20-alpine AS deps
+FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copiar manifests y lockfile — el cache de Docker se invalida solo si cambian
+# pnpm via corepack (incluido en node:20+)
+RUN corepack enable pnpm
+
+# Install deps — Docker cachea este layer si package.json + lockfile no cambian
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable pnpm && pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
-# ========================================
-# Stage 2: Builder
-# ========================================
-FROM node:20-alpine AS builder
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
+# Copiar el resto del source y buildear (standalone output)
 COPY . .
-
-# Telemetria de Next.js deshabilitada en builds de CI
 ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN corepack enable pnpm && pnpm build
+RUN pnpm build
 
 # ========================================
-# Stage 3: Runner (imagen final)
+# Stage 2: Runner (imagen final)
 # ========================================
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -43,11 +37,8 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup -S -g 1001 nodejs && \
     adduser -S -u 1001 -G nodejs nextjs
 
-# Copiar el output standalone + assets publicos + static files
-# Estos paths son convencion de Next.js con output=standalone:
-#   - .next/standalone  → server.js + node_modules minimo + package.json
-#   - .next/static      → assets compilados (CSS/JS hasheados)
-#   - public            → archivos estaticos (imagenes, favicon)
+# .next/standalone trae un node_modules minimal autocontenido (tree-shaken por
+# Next build), asi que el runner NO necesita pnpm ni node_modules globales.
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

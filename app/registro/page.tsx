@@ -15,6 +15,7 @@ interface RegisterFormData {
     phone?: string
 }
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, Loader2, Check, X } from "lucide-react"
@@ -37,6 +38,9 @@ export default function RegisterPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [touched, setTouched] = useState<Record<string, boolean>>({})
+    const [acceptedTerms, setAcceptedTerms] = useState(false)
+    const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
+    const [marketingOptIn, setMarketingOptIn] = useState(false)
 
     // Redirigir si ya está autenticado
     useEffect(() => {
@@ -158,12 +162,24 @@ export default function RegisterPage() {
 
         if (!isValid) return
 
+        if (!acceptedTerms || !acceptedPrivacy) {
+            setErrors((prev) => ({
+                ...prev,
+                consents: "Debes aceptar los términos y la política de privacidad para crear tu cuenta",
+            }))
+            setTouched((prev) => ({ ...prev, consents: true }))
+            return
+        }
+
         registerMutation.mutate(
             {
                 email: formData.email,
                 password: formData.password,
                 full_name: formData.name,
                 phone: formData.phone || undefined,
+                accepted_terms: true,
+                accepted_privacy: true,
+                marketing_opt_in: marketingOptIn,
             },
             {
                 onSuccess: () => {
@@ -345,12 +361,75 @@ export default function RegisterPage() {
                                 )}
                             </div>
 
-                            {/* Terms */}
-                            <p className="text-xs text-muted-foreground">
-                                Al crear una cuenta, aceptas nuestros{" "}
-                                <span className="text-[#db1a85] cursor-pointer hover:underline">Términos de Servicio</span> y{" "}
-                                <span className="text-[#db1a85] cursor-pointer hover:underline">Política de Privacidad</span>.
-                            </p>
+                            {/* Consentimientos LPDP (Ley 29733) */}
+                            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+                                <div className="flex items-start gap-2">
+                                    <Checkbox
+                                        id="accepted_terms"
+                                        checked={acceptedTerms}
+                                        onCheckedChange={(checked) => {
+                                            setAcceptedTerms(checked === true)
+                                            if (errors.consents) {
+                                                setErrors((prev) => {
+                                                    const next = { ...prev }
+                                                    delete next.consents
+                                                    return next
+                                                })
+                                            }
+                                        }}
+                                        className="mt-0.5"
+                                    />
+                                    <label htmlFor="accepted_terms" className="text-xs leading-relaxed cursor-pointer">
+                                        Acepto los{" "}
+                                        <Link href="/terminos" target="_blank" className="text-[#db1a85] hover:underline">
+                                            Términos de uso
+                                        </Link>{" "}
+                                        <span className="text-destructive">*</span>
+                                    </label>
+                                </div>
+
+                                <div className="flex items-start gap-2">
+                                    <Checkbox
+                                        id="accepted_privacy"
+                                        checked={acceptedPrivacy}
+                                        onCheckedChange={(checked) => {
+                                            setAcceptedPrivacy(checked === true)
+                                            if (errors.consents) {
+                                                setErrors((prev) => {
+                                                    const next = { ...prev }
+                                                    delete next.consents
+                                                    return next
+                                                })
+                                            }
+                                        }}
+                                        className="mt-0.5"
+                                    />
+                                    <label htmlFor="accepted_privacy" className="text-xs leading-relaxed cursor-pointer">
+                                        Acepto la{" "}
+                                        <Link href="/privacidad" target="_blank" className="text-[#db1a85] hover:underline">
+                                            Política de privacidad
+                                        </Link>{" "}
+                                        y el tratamiento de mis datos personales conforme a la Ley 29733.{" "}
+                                        <span className="text-destructive">*</span>
+                                    </label>
+                                </div>
+
+                                <div className="flex items-start gap-2">
+                                    <Checkbox
+                                        id="marketing_opt_in"
+                                        checked={marketingOptIn}
+                                        onCheckedChange={(checked) => setMarketingOptIn(checked === true)}
+                                        className="mt-0.5"
+                                    />
+                                    <label htmlFor="marketing_opt_in" className="text-xs leading-relaxed cursor-pointer text-muted-foreground">
+                                        Quiero recibir novedades y contenido educativo sobre mis medicamentos por correo (opcional).
+                                    </label>
+                                </div>
+
+                                {errors.consents && touched.consents && (
+                                    <p className="text-xs text-destructive">{errors.consents}</p>
+                                )}
+                            </div>
 
                             {/* Submit */}
                             <Button

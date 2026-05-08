@@ -3,7 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { bffFetch, BffError } from "@/lib/api/client";
-import type { ProfileResponseDTO } from "@/lib/api/types";
+import type {
+  AcceptConsentsRequest,
+  ConsentsListResponse,
+  ConsentsStatusResponse,
+  ProfileResponseDTO,
+  UpdateProfileRequest,
+} from "@/lib/api/types";
 import { queryKeys } from "@/lib/query/keys";
 import type { LoginInput, RegisterInput } from "@/lib/auth/schemas";
 
@@ -42,6 +48,64 @@ export function useRegister() {
   return useMutation<{ email: string; message: string }, BffError, RegisterInput>({
     mutationFn: (input) =>
       bffFetch("/api/auth/register", { method: "POST", body: input }),
+  });
+}
+
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation<ProfileResponseDTO, BffError, UpdateProfileRequest>({
+    mutationFn: (input) =>
+      bffFetch<ProfileResponseDTO>("/api/auth/me", { method: "PUT", body: input }),
+    onSuccess: (data) => {
+      qc.setQueryData(queryKeys.auth.me, data);
+    },
+  });
+}
+
+export function useMyConsents() {
+  return useQuery<ConsentsListResponse, BffError>({
+    queryKey: queryKeys.auth.consents,
+    queryFn: () => bffFetch<ConsentsListResponse>("/api/auth/me/consents"),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useConsentsStatus(enabled: boolean) {
+  return useQuery<ConsentsStatusResponse, BffError>({
+    queryKey: queryKeys.auth.consentsStatus,
+    queryFn: () => bffFetch<ConsentsStatusResponse>("/api/auth/me/consents/status"),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
+export function useAcceptPendingConsents() {
+  const qc = useQueryClient();
+  return useMutation<void, BffError, AcceptConsentsRequest>({
+    mutationFn: (input) =>
+      bffFetch<void>("/api/auth/me/consents/accept", {
+        method: "POST",
+        body: input,
+      }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: queryKeys.auth.consentsStatus });
+      await qc.invalidateQueries({ queryKey: queryKeys.auth.consents });
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  const qc = useQueryClient();
+  const router = useRouter();
+
+  return useMutation<void, BffError, void>({
+    mutationFn: () => bffFetch<void>("/api/auth/me", { method: "DELETE" }),
+    onSuccess: () => {
+      qc.setQueryData(queryKeys.auth.me, null);
+      qc.clear();
+      router.push("/?account_deleted=1");
+    },
   });
 }
 

@@ -15,6 +15,15 @@ export const registerSchema = z.object({
     .regex(/[0-9]/, "Debe tener un número"),
   full_name: z.string().min(3, "Mínimo 3 caracteres"),
   phone: z.string().min(7, "Mínimo 7 dígitos").optional().or(z.literal("")),
+  // LPDP Ley 29733: ambos obligatorios, deben ser literalmente true
+  accepted_terms: z.literal(true, {
+    errorMap: () => ({ message: "Debes aceptar los términos de uso" }),
+  }),
+  accepted_privacy: z.literal(true, {
+    errorMap: () => ({ message: "Debes aceptar la política de privacidad" }),
+  }),
+  // Opt-in opcional — el usuario puede aceptar o rechazar explícitamente
+  marketing_opt_in: z.boolean().default(false),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

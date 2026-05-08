@@ -31,14 +31,31 @@ export async function POST(request: Request) {
   }
 
   const payload = {
-    ...parsed.data,
+    email: parsed.data.email,
+    password: parsed.data.password,
+    full_name: parsed.data.full_name,
     phone: parsed.data.phone === "" ? undefined : parsed.data.phone,
+    accepted_terms: parsed.data.accepted_terms,
+    accepted_privacy: parsed.data.accepted_privacy,
+    marketing_opt_in: parsed.data.marketing_opt_in,
   };
+
+  // Propagar evidencia legal al gateway para registrar el consent con la IP/UA real del browser
+  // (sin esto, el gateway vería la IP del BFF Next.js y el UA de Node).
+  const clientIP =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "";
+  const clientUA = request.headers.get("user-agent") ?? "";
 
   try {
     const response = await gatewayFetch<RegisterResponseDTO>("/api/v1/auth/register", {
       method: "POST",
       body: payload,
+      headers: {
+        ...(clientIP && { "X-Forwarded-For": clientIP }),
+        ...(clientUA && { "User-Agent": clientUA }),
+      },
     });
 
     return NextResponse.json(

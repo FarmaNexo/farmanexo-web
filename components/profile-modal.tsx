@@ -1,103 +1,223 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useFarmaNexoStore } from "@/lib/farmanexo-store"
-import { mockDrugs } from "@/lib/farmanexo-data"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Clock, Search, Settings, Shield, Heart, Trash2, Edit3, Save, X, Pill } from "lucide-react"
-import type { Drug, SearchHistoryItem } from "@/lib/types"
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useQueries } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useFarmaNexoStore } from "@/lib/farmanexo-store";
+import {
+  useDeleteAccount,
+  useIsAuthenticated,
+  useMyConsents,
+  useUpdateProfile,
+} from "@/hooks/use-auth";
+import { bffFetch } from "@/lib/api/client";
+import { queryKeys } from "@/lib/query/keys";
+import type {
+  ConsentItem,
+  Product,
+  UpdateProfileRequest,
+} from "@/lib/api/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  Edit3,
+  FileText,
+  Heart,
+  Loader2,
+  Pill,
+  Save,
+  Settings,
+  Shield,
+  ShieldCheck,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
 
 interface ProfileModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-interface UserProfile {
-  name: string
-  email: string
-  phone: string
-  address: string
-  district: string
-  preferences: {
-    preferGeneric: boolean
-    maxDistance: number
-    notifications: boolean
-  }
+interface EditFormState {
+  full_name: string;
+  phone: string;
+  bio: string;
+  date_of_birth: string;
+}
+
+function emptyForm(): EditFormState {
+  return { full_name: "", phone: "", bio: "", date_of_birth: "" };
 }
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const [mounted, setMounted] = useState(false)
-  const { favorites, searchHistory, searchRadius, toggleFavorite, clearSearchHistory, setSearchRadius } =
-    useFarmaNexoStore()
+  const [mounted, setMounted] = useState(false);
+  const { favorites, toggleFavorite, searchRadius, setSearchRadius } =
+    useFarmaNexoStore();
+  const { user } = useIsAuthenticated();
+  const updateProfile = useUpdateProfile();
+  const consentsQuery = useMyConsents();
+  const deleteAccount = useDeleteAccount();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<EditFormState>(emptyForm);
+  const [preferences, setPreferences] = useState({
+    preferGeneric: true,
+    notifications: true,
+  });
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    district: "San Isidro",
-    preferences: {
-      preferGeneric: true,
-      maxDistance: searchRadius,
-      notifications: true,
-    },
-  })
+  useEffect(() => {
+    if (!user) return;
+    setEditForm({
+      full_name: user.full_name ?? "",
+      phone: user.phone ?? "",
+      bio: user.bio ?? "",
+      date_of_birth: user.date_of_birth ?? "",
+    });
+  }, [user]);
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [editForm, setEditForm] = useState({ ...userProfile })
+  const favoriteQueries = useQueries({
+    queries: favorites.map((id) => ({
+      queryKey: queryKeys.products.detail(id),
+      queryFn: () =>
+        bffFetch<Product>(`/api/products/${encodeURIComponent(id)}`),
+      staleTime: 5 * 60 * 1000,
+      retry: 1 as const,
+    })),
+  });
 
-  const favoriteDrugs = mounted ? mockDrugs.filter((drug: Drug) => favorites.includes(drug.id)) : []
+  const favoriteProducts = useMemo(() => {
+    if (!mounted) return [] as Product[];
+    return favoriteQueries
+      .map((q) => q.data)
+      .filter((p): p is Product => !!p);
+  }, [mounted, favoriteQueries]);
 
-  const distritos = [
-    "San Isidro",
-    "Miraflores",
-    "San Borja",
-    "Surco",
-    "La Molina",
-    "Barranco",
-    "Jesús María",
-    "Lince",
-    "Magdalena",
-    "Pueblo Libre",
-    "San Miguel",
-  ]
+  const isLoadingFavorites =
+    mounted && favorites.length > 0 && favoriteQueries.some((q) => q.isLoading);
 
-  const handleSaveProfile = () => {
-    setUserProfile(editForm)
-    if (editForm.preferences.maxDistance !== searchRadius) {
-      setSearchRadius(editForm.preferences.maxDistance)
-    }
-    setIsEditing(false)
-  }
+  const handleStartEdit = () => {
+    if (!user) return;
+    setEditForm({
+      full_name: user.full_name ?? "",
+      phone: user.phone ?? "",
+      bio: user.bio ?? "",
+      date_of_birth: user.date_of_birth ?? "",
+    });
+    setIsEditing(true);
+  };
 
   const handleCancelEdit = () => {
-    setEditForm({ ...userProfile })
-    setIsEditing(false)
-  }
+    setEditForm({
+      full_name: user?.full_name ?? "",
+      phone: user?.phone ?? "",
+      bio: user?.bio ?? "",
+      date_of_birth: user?.date_of_birth ?? "",
+    });
+    setIsEditing(false);
+  };
 
-  const formatDate = (date: Date | string) => {
-    return new Intl.DateTimeFormat("es-PE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(date))
-  }
+  const handleSaveProfile = () => {
+    if (!user) return;
 
-  if (!mounted) return null
+    const payload: UpdateProfileRequest = {};
+    if (editForm.full_name !== (user.full_name ?? ""))
+      payload.full_name = editForm.full_name.trim();
+    if (editForm.phone !== (user.phone ?? ""))
+      payload.phone = editForm.phone.trim();
+    if (editForm.bio !== (user.bio ?? ""))
+      payload.bio = editForm.bio.trim();
+    if (editForm.date_of_birth !== (user.date_of_birth ?? ""))
+      payload.date_of_birth = editForm.date_of_birth || undefined;
+
+    if (Object.keys(payload).length === 0) {
+      setIsEditing(false);
+      return;
+    }
+
+    updateProfile.mutate(payload, {
+      onSuccess: () => {
+        toast.success("Perfil actualizado");
+        setIsEditing(false);
+      },
+      onError: (err) => {
+        toast.error("No se pudo actualizar el perfil", {
+          description: err.message,
+        });
+      },
+    });
+  };
+
+  const handleExportData = () => {
+    const payload = {
+      exported_at: new Date().toISOString(),
+      profile: user,
+      consents: consentsQuery.data?.consents ?? [],
+      favorites_ids: favorites,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `farmanexo-mis-datos-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast.success("Descargando tus datos personales");
+  };
+
+  const handleDeleteAccount = () => {
+    if (deleteConfirmText !== "ELIMINAR") {
+      toast.error("Escribe ELIMINAR para confirmar");
+      return;
+    }
+    deleteAccount.mutate(undefined, {
+      onError: (err) => {
+        toast.error("No se pudo eliminar la cuenta", { description: err.message });
+      },
+    });
+  };
+
+  if (!mounted) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -110,21 +230,21 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         </DialogHeader>
 
         <Tabs defaultValue="favorites" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="favorites" className="text-xs sm:text-sm">
               <Heart className="size-3 sm:size-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Favoritos</span>
               <span className="sm:hidden">Favs</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="text-xs sm:text-sm">
-              <Clock className="size-3 sm:size-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Historial</span>
-              <span className="sm:hidden">Hist</span>
-            </TabsTrigger>
             <TabsTrigger value="profile" className="text-xs sm:text-sm">
               <User className="size-3 sm:size-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Datos</span>
               <span className="sm:hidden">Perfil</span>
+            </TabsTrigger>
+            <TabsTrigger value="privacy" className="text-xs sm:text-sm">
+              <ShieldCheck className="size-3 sm:size-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Privacidad</span>
+              <span className="sm:hidden">Priv</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="text-xs sm:text-sm">
               <Settings className="size-3 sm:size-4 mr-1 sm:mr-2" />
@@ -138,23 +258,33 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               <CardHeader className="pb-2 sm:pb-4">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Heart className="size-4 sm:size-5 text-brand-pink" />
-                  Medicamentos Favoritos ({favoriteDrugs.length})
+                  Medicamentos favoritos ({favoriteProducts.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {favoriteDrugs.length === 0 ? (
+                {isLoadingFavorites && favoriteProducts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Loader2 className="size-6 animate-spin mx-auto mb-3 text-brand-pink" />
+                    <p className="text-sm">Cargando tus favoritos…</p>
+                  </div>
+                ) : favorites.length === 0 ? (
                   <div className="text-center py-8">
                     <Heart className="size-10 sm:size-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground text-sm sm:text-base">No tienes medicamentos favoritos aún</p>
+                    <p className="text-muted-foreground text-sm sm:text-base">
+                      Aún no tienes medicamentos favoritos
+                    </p>
                     <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                      Marca medicamentos como favoritos para encontrarlos fácilmente
+                      Marca el corazón en cualquier medicamento para guardarlo
+                      aquí
                     </p>
                   </div>
                 ) : (
                   <div className="grid gap-3">
-                    {favoriteDrugs.map((drug: Drug) => (
-                      <div
-                        key={drug.id}
+                    {favoriteProducts.map((product) => (
+                      <Link
+                        key={product.id}
+                        href={`/medicamento/${product.slug}`}
+                        onClick={onClose}
                         className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -162,71 +292,55 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                             <Pill className="size-4 text-brand-pink" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{drug.commercialNames?.[0] || drug.dci}</p>
+                            <p className="font-medium text-sm truncate">
+                              {product.name}
+                            </p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {drug.concentration} - {drug.pharmaceuticalForm}
+                              {product.active_ingredient ?? "—"}
+                              {product.concentration
+                                ? ` · ${product.concentration}`
+                                : ""}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          {drug.isGeneric && (
-                            <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
-                              Genérico
+                          {product.requires_prescription ? (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs hidden sm:inline-flex bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            >
+                              Receta
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs hidden sm:inline-flex bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                            >
+                              Venta libre
                             </Badge>
                           )}
                           <Button
                             variant="ghost"
                             size="icon"
                             className="text-destructive hover:text-destructive h-8 w-8"
-                            onClick={() => toggleFavorite(drug.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleFavorite(product.id);
+                            }}
+                            aria-label="Quitar de favoritos"
                           >
                             <Trash2 className="size-4" />
                           </Button>
                         </div>
-                      </div>
+                      </Link>
                     ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="history" className="mt-4">
-            <Card>
-              <CardHeader className="pb-2 sm:pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    <Clock className="size-4 sm:size-5 text-brand-teal" />
-                    Historial de Búsquedas
-                  </CardTitle>
-                  {searchHistory.length > 0 && (
-                    <Button variant="outline" size="sm" onClick={clearSearchHistory} className="text-xs bg-transparent">
-                      <Trash2 className="size-3 mr-1" />
-                      Limpiar
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {searchHistory.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Search className="size-10 sm:size-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground text-sm sm:text-base">No tienes búsquedas recientes</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-2">
-                    {searchHistory.slice(0, 10).map((search: SearchHistoryItem) => (
-                      <div
-                        key={search.id}
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Search className="size-4 text-muted-foreground" />
-                          <span className="text-sm">{search.term}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{formatDate(search.timestamp)}</span>
-                      </div>
-                    ))}
+                    {favoriteProducts.length < favorites.length && (
+                      <p className="text-xs text-muted-foreground text-center pt-2">
+                        Algunos favoritos no pudieron cargarse (pueden haber
+                        sido eliminados del catálogo).
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -239,21 +353,40 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                     <User className="size-4 sm:size-5 text-brand-pink" />
-                    Datos Personales
+                    Datos personales
                   </CardTitle>
                   {!isEditing ? (
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleStartEdit}
+                      disabled={!user}
+                    >
                       <Edit3 className="size-3 mr-1" />
                       Editar
                     </Button>
                   ) : (
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancelEdit}
+                        disabled={updateProfile.isPending}
+                      >
                         <X className="size-3 mr-1" />
                         Cancelar
                       </Button>
-                      <Button size="sm" onClick={handleSaveProfile} className="bg-brand-teal hover:bg-brand-teal/90">
-                        <Save className="size-3 mr-1" />
+                      <Button
+                        size="sm"
+                        onClick={handleSaveProfile}
+                        disabled={updateProfile.isPending}
+                        className="bg-brand-teal hover:bg-brand-teal/90"
+                      >
+                        {updateProfile.isPending ? (
+                          <Loader2 className="size-3 mr-1 animate-spin" />
+                        ) : (
+                          <Save className="size-3 mr-1" />
+                        )}
                         Guardar
                       </Button>
                     </div>
@@ -261,68 +394,231 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Nombre</label>
-                    <Input
-                      value={isEditing ? editForm.name : userProfile.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      disabled={!isEditing}
-                      placeholder="Tu nombre"
-                    />
+                {!user ? (
+                  <p className="text-sm text-muted-foreground">
+                    Debes iniciar sesión para ver tus datos personales.
+                  </p>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium mb-1 block">
+                          Nombre completo
+                        </label>
+                        <Input
+                          value={
+                            isEditing
+                              ? editForm.full_name
+                              : (user.full_name ?? "")
+                          }
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              full_name: e.target.value,
+                            })
+                          }
+                          disabled={!isEditing}
+                          placeholder="Tu nombre completo"
+                          maxLength={200}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">
+                          Correo electrónico
+                        </label>
+                        <Input
+                          value={user.email ?? ""}
+                          disabled
+                          readOnly
+                          placeholder="—"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          El correo no se puede cambiar desde aquí.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">
+                          Teléfono
+                        </label>
+                        <Input
+                          value={
+                            isEditing ? editForm.phone : (user.phone ?? "")
+                          }
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, phone: e.target.value })
+                          }
+                          disabled={!isEditing}
+                          placeholder="+51 999 999 999"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">
+                          Fecha de nacimiento
+                        </label>
+                        <Input
+                          type="date"
+                          value={
+                            isEditing
+                              ? editForm.date_of_birth
+                              : (user.date_of_birth ?? "")
+                          }
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              date_of_birth: e.target.value,
+                            })
+                          }
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">
+                        Biografía
+                      </label>
+                      <Textarea
+                        value={isEditing ? editForm.bio : (user.bio ?? "")}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, bio: e.target.value })
+                        }
+                        disabled={!isEditing}
+                        placeholder="Cuéntanos algo sobre ti (opcional)"
+                        maxLength={500}
+                        rows={3}
+                      />
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      <Shield className="size-3 inline mr-1" />
+                      Tus datos están protegidos y solo se usan para mejorar tu
+                      experiencia en FarmaNexo.
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="privacy" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <FileText className="size-4 sm:size-5 text-brand-teal" />
+                  Mis consentimientos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {consentsQuery.isLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <Loader2 className="size-4 animate-spin" />
+                    Cargando consentimientos…
                   </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Email</label>
-                    <Input
-                      type="email"
-                      value={isEditing ? editForm.email : userProfile.email}
-                      onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                      disabled={!isEditing}
-                      placeholder="tu@email.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Teléfono</label>
-                    <Input
-                      value={isEditing ? editForm.phone : userProfile.phone}
-                      onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                      disabled={!isEditing}
-                      placeholder="+51 999 999 999"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Distrito</label>
-                    <Select
-                      value={isEditing ? editForm.district : userProfile.district}
-                      onValueChange={(value) => setEditForm({ ...editForm, district: value })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {distritos.map((d) => (
-                          <SelectItem key={d} value={d}>
-                            {d}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Dirección</label>
-                  <Input
-                    value={isEditing ? editForm.address : userProfile.address}
-                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="Tu dirección"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  <Shield className="size-3 inline mr-1" />
-                  Tus datos están protegidos y solo se usan para mejorar tu experiencia en FarmaNexo.
+                ) : consentsQuery.error ? (
+                  <p className="text-sm text-destructive">
+                    No se pudieron cargar tus consentimientos.
+                  </p>
+                ) : (
+                  <ConsentList items={consentsQuery.data?.consents ?? []} />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <Download className="size-4 sm:size-5 text-brand-teal" />
+                  Exportar mis datos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Descarga una copia en JSON de tu perfil, tus consentimientos y
+                  tus favoritos. Parte de tu derecho ARCO de acceso conforme a
+                  la Ley 29733 de Protección de Datos Personales.
                 </p>
+                <Button
+                  variant="outline"
+                  onClick={handleExportData}
+                  disabled={!user}
+                  className="gap-2"
+                >
+                  <Download className="size-4" />
+                  Descargar mis datos (JSON)
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-destructive/40">
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="size-4 sm:size-5" />
+                  Eliminar mi cuenta
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Ejercerás tu derecho ARCO de cancelación. Anonimizaremos tus
+                  datos personales y cerraremos tu sesión de inmediato. Tus
+                  consentimientos quedan archivados para auditoría conforme a
+                  la ley, pero ya no estarán vinculados a ti de forma
+                  identificable.
+                </p>
+                <p className="text-xs sm:text-sm font-medium text-destructive">
+                  Esta acción es irreversible.
+                </p>
+                {!showDeleteConfirm ? (
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={!user}
+                  >
+                    <Trash2 className="size-4 mr-2" />
+                    Eliminar mi cuenta
+                  </Button>
+                ) : (
+                  <div className="space-y-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
+                    <label className="text-xs font-medium">
+                      Para confirmar, escribe{" "}
+                      <span className="font-mono font-bold">ELIMINAR</span>:
+                    </label>
+                    <Input
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="ELIMINAR"
+                      autoComplete="off"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setDeleteConfirmText("");
+                        }}
+                        disabled={deleteAccount.isPending}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteAccount}
+                        disabled={
+                          deleteConfirmText !== "ELIMINAR" ||
+                          deleteAccount.isPending
+                        }
+                      >
+                        {deleteAccount.isPending ? (
+                          <Loader2 className="size-4 mr-2 animate-spin" />
+                        ) : (
+                          <Trash2 className="size-4 mr-2" />
+                        )}
+                        Confirmar eliminación
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -339,14 +635,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-sm">Preferir genéricos</p>
-                    <p className="text-xs text-muted-foreground">Mostrar primero medicamentos genéricos</p>
+                    <p className="text-xs text-muted-foreground">
+                      Mostrar primero medicamentos genéricos cuando existan
+                    </p>
                   </div>
                   <Switch
-                    checked={userProfile.preferences.preferGeneric}
+                    checked={preferences.preferGeneric}
                     onCheckedChange={(checked) =>
-                      setUserProfile({
-                        ...userProfile,
-                        preferences: { ...userProfile.preferences, preferGeneric: checked },
+                      setPreferences({
+                        ...preferences,
+                        preferGeneric: checked,
                       })
                     }
                   />
@@ -357,14 +655,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-sm">Notificaciones</p>
-                    <p className="text-xs text-muted-foreground">Recibir alertas de precios y ofertas</p>
+                    <p className="text-xs text-muted-foreground">
+                      Recibir alertas de precios y novedades
+                    </p>
                   </div>
                   <Switch
-                    checked={userProfile.preferences.notifications}
+                    checked={preferences.notifications}
                     onCheckedChange={(checked) =>
-                      setUserProfile({
-                        ...userProfile,
-                        preferences: { ...userProfile.preferences, notifications: checked },
+                      setPreferences({
+                        ...preferences,
+                        notifications: checked,
                       })
                     }
                   />
@@ -374,8 +674,13 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                 <div>
                   <p className="font-medium text-sm mb-2">Radio de búsqueda</p>
-                  <p className="text-xs text-muted-foreground mb-3">Distancia máxima para buscar farmacias cercanas</p>
-                  <Select value={String(searchRadius)} onValueChange={(value) => setSearchRadius(Number(value))}>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Distancia máxima por defecto al buscar farmacias cercanas
+                  </p>
+                  <Select
+                    value={String(searchRadius)}
+                    onValueChange={(value) => setSearchRadius(Number(value))}
+                  >
                     <SelectTrigger className="w-full sm:w-48">
                       <SelectValue />
                     </SelectTrigger>
@@ -394,7 +699,63 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         </Tabs>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default ProfileModal
+const CONSENT_LABELS: Record<string, string> = {
+  terms_of_service: "Términos de uso",
+  privacy_policy: "Política de privacidad",
+  marketing_communications: "Comunicaciones de marketing",
+};
+
+function ConsentList({ items }: { items: ConsentItem[] }) {
+  if (items.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No hay consentimientos registrados todavía.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {items.map((c) => {
+        const label = CONSENT_LABELS[c.consent_type] ?? c.consent_type;
+        return (
+          <div
+            key={c.id}
+            className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"
+          >
+            <div className="min-w-0">
+              <p className="font-medium">{label}</p>
+              <p className="text-xs text-muted-foreground">
+                Versión {c.document_version} ·{" "}
+                {new Date(c.accepted_at).toLocaleString("es-PE")}
+              </p>
+            </div>
+            {c.is_active ? (
+              c.accepted ? (
+                <span className="shrink-0 inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="size-3.5" />
+                  Aceptado
+                </span>
+              ) : (
+                <span className="shrink-0 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <X className="size-3.5" />
+                  Rechazado
+                </span>
+              )
+            ) : (
+              <span className="shrink-0 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <X className="size-3.5" />
+                Revocado
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default ProfileModal;

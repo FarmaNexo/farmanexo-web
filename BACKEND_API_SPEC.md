@@ -148,26 +148,31 @@ El perfil se crea automáticamente al registrarse (user-service consume `USER_RE
 
 ## 5. Catalog (catalog-service :4003)
 
-Público vía `/api/v1/public/*` (sin auth), protegido bajo `/api/v1/*`.
+**Modelo de auth (2026-05-06):** un único path por recurso. El gateway delega la decisión
+de auth al microservicio downstream — los GETs públicos del catálogo no requieren JWT
+y los POST/PUT/DELETE admin son rechazados por el `authMiddleware` de catalog-service.
+Eliminado el namespace `/api/v1/public/*` (violaba el principio "modo de acceso en
+middleware, no en path" — ver `services/CLAUDE.md` §5.5).
 
 | Método | Ruta gateway | Auth | Notas |
 |---|---|---|---|
-| GET | `/api/v1/products` | Bearer | Listado paginado |
-| GET | `/api/v1/products/{id}` | Bearer | Detalle (cache 1h) |
-| POST | `/api/v1/products/search` | Bearer | Búsqueda avanzada |
-| GET | `/api/v1/products/barcode/{barcode}` | Bearer | Por código de barras |
-| GET | `/api/v1/products/{id}/interactions` | Bearer | Interacciones (cache 24h) |
-| GET | `/api/v1/products/{id}/frequently-bought-together` | Bearer | FBT (cache 6h) |
-| GET | `/api/v1/products/{id}/availability` | Bearer | Disponibilidad en farmacias |
-| GET | `/api/v1/categories` | Bearer | Listar categorías |
-| GET | `/api/v1/categories/{id}/products` | Bearer | Productos por categoría |
-| GET | `/api/v1/brands` | Bearer | Listar marcas |
-| GET | `/api/v1/brands/{id}/products` | Bearer | Productos por marca |
-| GET | `/api/v1/public/products/*` | — | Mismo contrato, sin auth |
-| GET | `/api/v1/public/categories/*` | — | Idem |
-| GET | `/api/v1/public/brands/*` | — | Idem |
+| GET | `/api/v1/products` | — | Listado paginado |
+| GET | `/api/v1/products/{id}` | — | Detalle (cache 1h) |
+| POST | `/api/v1/products/search` | — | Búsqueda avanzada |
+| GET | `/api/v1/products/barcode/{barcode}` | — | Por código de barras |
+| GET | `/api/v1/products/{id}/interactions` | — | Interacciones (cache 24h) |
+| GET | `/api/v1/products/{id}/frequently-bought-together` | — | FBT (cache 6h) |
+| GET | `/api/v1/products/{id}/availability` | — | Disponibilidad en farmacias (HU-014: acepta `?lat&lng&radius_km`) |
+| GET | `/api/v1/products/slug/{slug}` | — | Detalle por slug |
+| GET | `/api/v1/categories` | — | Listar categorías |
+| GET | `/api/v1/categories/{id}/products` | — | Productos por categoría |
+| GET | `/api/v1/brands` | — | Listar marcas |
+| GET | `/api/v1/brands/{id}/products` | — | Productos por marca |
 
-Endpoints administrativos existen pero requieren rol `admin`; no se exponen al front público.
+Endpoints administrativos (`POST /products`, `PUT /products/{id}`, `DELETE /products/{id}`,
+`PUT /products/{id}/images`, `POST /categories`, `PUT /categories/{id}`, `POST /brands`,
+`PUT /brands/{id}`, `POST /products/interactions`) existen pero requieren rol `admin` —
+los rechaza el `authMiddleware` del propio catalog-service. No se exponen al front público.
 
 ---
 

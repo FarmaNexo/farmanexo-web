@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/lib/query/provider";
+import { PendingConsentsDialog } from "@/components/pending-consents-dialog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +36,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            {children}
+            <PendingConsentsDialog />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

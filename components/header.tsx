@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { OrdersModal } from "@/components/orders-modal"
 import ProfileModal from "@/components/profile-modal"
 import { LocationModal } from "@/components/location-modal"
-import { MapPin, Heart, ShoppingBag, Menu, User, Home, Search, Pill, LogIn, LogOut, UserPlus } from "lucide-react"
+import { MapPin, Heart, ShoppingBag, Menu, User, Home, Search, Pill, LogIn, LogOut, UserPlus, Building2 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   DropdownMenu,
@@ -109,6 +109,12 @@ export function Header() {
             <Link href="/catalogo" className="gap-2">
               <Pill className="size-4" />
               Catálogo
+            </Link>
+          </Button>
+          <Button variant={isActive("/farmacias") ? "secondary" : "ghost"} size="sm" asChild>
+            <Link href="/farmacias" className="gap-2">
+              <Building2 className="size-4" />
+              Farmacias
             </Link>
           </Button>
           <Button variant={isActive("/buscar") ? "secondary" : "ghost"} size="sm" asChild>
@@ -296,6 +302,17 @@ export function Header() {
                     <Link href="/catalogo">
                       <Pill className="mr-2 h-4 w-4" />
                       Catálogo
+                    </Link>
+                  </Button>
+                  <Button
+                    variant={isActive("/farmacias") ? "secondary" : "ghost"}
+                    className="w-full justify-start"
+                    asChild
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Link href="/farmacias">
+                      <Building2 className="mr-2 h-4 w-4" />
+                      Farmacias
                     </Link>
                   </Button>
                   <Button

@@ -35,6 +35,9 @@ export const queryKeys = {
     alternatives: (productId: string, limit: number) =>
       ["prices", "alternatives", productId, limit] as const,
   },
+  cart: {
+    current: ["cart", "current"] as const,
+  },
   legal: {
     types: ["legal", "types"] as const,
     current: (typeCode: string, locale?: string) =>

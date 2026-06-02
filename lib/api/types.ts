@@ -347,3 +347,45 @@ export interface ProductAlternativesResponse {
   alternatives: ProductAlternative[];
   total: number;
 }
+
+// ============================================================
+// Cart / Orders (order-service)
+// ============================================================
+
+export interface CartItemResponse {
+  id: string;
+  product_id: string;
+  product_name: string;
+  pharmacy_id: string;
+  pharmacy_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  stock_available: number;
+}
+
+export interface PharmacyGroupResponse {
+  pharmacy_id: string;
+  pharmacy_name: string;
+  items: CartItemResponse[];
+  subtotal: number;
+}
+
+export interface CartResponse {
+  user_id: string;
+  items: CartItemResponse[];
+  grouped_by_pharmacy: PharmacyGroupResponse[];
+  total_items: number;
+  total_amount: number;
+  updated_at: string;
+}
+
+export interface AddCartItemRequest {
+  product_id: string;
+  pharmacy_id: string;
+  quantity: number;
+}
+
+export interface UpdateCartItemRequest {
+  quantity: number;
+}

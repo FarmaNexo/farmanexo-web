@@ -42,6 +42,7 @@ import {
   type NearMeLocation,
 } from "@/components/near-me-toggle";
 import { OverpriceBadge } from "@/components/overprice-badge";
+import { AddToCartButton } from "@/components/add-to-cart-button";
 
 function formatPrice(v: number) {
   return new Intl.NumberFormat("es-PE", {
@@ -572,7 +573,7 @@ export default function MedicamentoDetailPage({
                             : `Posición ${index + 1}: ${item.pharmacy_name}, ${formatPrice(item.price)}`
                         }
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-lg bg-card border border-transparent hover:border-brand-pink/30 hover:bg-muted/40 hover:shadow-sm transition-all gap-3 sm:gap-4">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <span
                               className={`text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
@@ -611,34 +612,48 @@ export default function MedicamentoDetailPage({
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 ml-9 sm:ml-0 shrink-0">
-                            {/* HU-016 — alerta de sobreprecio: visible en todos
-                                 los breakpoints porque es información de seguridad
-                                 económica que no debería ocultarse en mobile. */}
-                            {item.is_overpriced &&
-                              typeof item.overprice_pct === "number" && (
-                                <OverpriceBadge
-                                  overpricePct={item.overprice_pct}
-                                  districtAvgPrice={item.district_avg_price}
-                                  district={item.pharmacy_district}
-                                />
+                          {/* Meta badges row: en mobile arriba del precio/CTA, en desktop inline */}
+                          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 ml-9 sm:ml-0">
+                            <div className="flex items-center gap-2 sm:gap-2">
+                              {/* HU-016 — alerta de sobreprecio: visible en todos los
+                                  breakpoints porque es información de seguridad económica. */}
+                              {item.is_overpriced &&
+                                typeof item.overprice_pct === "number" && (
+                                  <OverpriceBadge
+                                    overpricePct={item.overprice_pct}
+                                    districtAvgPrice={item.district_avg_price}
+                                    district={item.pharmacy_district}
+                                  />
+                                )}
+                              {index === 0 && !item.is_overpriced && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[10px] sm:text-xs bg-brand-teal/10 text-brand-teal border-0 hidden sm:inline-flex"
+                                >
+                                  {priceInfo.sortedByDistance ? "Más cerca" : "Precio más bajo"}
+                                </Badge>
                               )}
-                            {index === 0 && !item.is_overpriced && (
-                              <Badge
-                                variant="secondary"
-                                className="text-xs bg-brand-teal/10 text-brand-teal hidden sm:inline-flex"
-                              >
-                                {priceInfo.sortedByDistance ? "Más cerca" : "Precio más bajo"}
-                              </Badge>
-                            )}
-                            {item.stock > 0 && (
-                              <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                                Stock {item.stock}
-                              </span>
-                            )}
-                            <p className="font-bold text-brand-teal text-lg sm:text-xl">
-                              {formatPrice(item.price)}
-                            </p>
+                              {/* T2.4 — pill "Quedan N" solo cuando stock es bajo (urgencia) */}
+                              {item.stock > 0 && item.stock <= 3 && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[10px] sm:text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0"
+                                >
+                                  {item.stock === 1 ? "Última unidad" : `Quedan ${item.stock}`}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                              <p className="font-bold text-brand-teal text-lg sm:text-xl tabular-nums">
+                                {formatPrice(item.price)}
+                              </p>
+                              <AddToCartButton
+                                productId={product.id}
+                                pharmacyId={item.pharmacy_id}
+                                stock={item.stock}
+                                compact
+                              />
+                            </div>
                           </div>
                         </div>
                       </Link>

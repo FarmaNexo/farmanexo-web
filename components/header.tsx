@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useFarmaNexoStore } from "@/lib/farmanexo-store"
 import { useIsAuthenticated, useLogout } from "@/hooks/use-auth"
+import { useCart } from "@/lib/api/hooks/use-cart"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { OrdersModal } from "@/components/orders-modal"
@@ -35,18 +36,21 @@ export function Header() {
   const logoutMutation = useLogout()
 
   // App state
-  const shoppingList = useFarmaNexoStore((state) => state.shoppingList)
   const favorites = useFarmaNexoStore((state) => state.favorites)
   const userLocation = useFarmaNexoStore((state) => state.userLocation)
+  // Cart real (order-service). Auto-disabled si no hay sesión — ver useCart.
+  const { data: cart } = useCart()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   const ordersCount = useMemo(() => {
-    if (!mounted) return 0
-    return shoppingList.reduce((count, item) => count + item.quantity, 0)
-  }, [mounted, shoppingList])
+    if (!mounted || !cart) return 0
+    // backend `total_items` cuenta líneas distintas. Para el badge sumamos
+    // unidades totales (qty) — semántica de marketplace estándar.
+    return cart.items.reduce((sum, item) => sum + item.quantity, 0)
+  }, [mounted, cart])
 
   const favoriteCount = useMemo(() => {
     if (!mounted) return 0
@@ -158,14 +162,13 @@ export function Header() {
                   )}
                 </Button>
 
-                {/* Mis Órdenes - Solo si está logueado */}
-                <Button variant="ghost" size="sm" className="relative" onClick={() => setShowOrdersModal(true)}>
+                {/* Mi Carrito - Solo si está logueado */}
+                <Button variant="ghost" size="sm" className="relative" onClick={() => router.push("/carrito")} aria-label="Mi carrito">
                   <ShoppingBag className="h-4 w-4" />
-                  <span className="hidden lg:inline ml-1">Mis Órdenes</span>
+                  <span className="hidden lg:inline ml-1">Mi carrito</span>
                   {ordersCount > 0 && (
                     <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-brand-coral hover:bg-brand-coral/90"
+                      className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-[10px] font-semibold bg-brand-pink hover:bg-brand-pink-dark text-white border-0 tabular-nums"
                     >
                       {ordersCount}
                     </Badge>

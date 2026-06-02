@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { gatewayFetch } from "@/lib/api/gateway";
 import { ApiError } from "@/lib/api/errors";
 import { withAuth } from "@/lib/auth/session";
-import { enrichCartWithProductNames } from "@/lib/api/cart-enrichment";
 import type { CartResponse } from "@/lib/api/types";
 
 export const runtime = "nodejs";
@@ -16,8 +15,7 @@ export async function GET() {
         cache: "no-store",
       }).then((r) => r.datos)
     );
-    const enriched = await enrichCartWithProductNames(cart);
-    return NextResponse.json(enriched, { status: 200 });
+    return NextResponse.json(cart, { status: 200 });
   } catch (err) {
     if (err instanceof ApiError) {
       return NextResponse.json(

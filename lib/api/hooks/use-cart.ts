@@ -39,11 +39,8 @@ export function useAddToCart() {
         method: "POST",
         body: input,
       }),
-    onSuccess: () => {
-      // invalidateQueries (no setQueryData) porque el GET BFF enriquece
-      // product_name vía catalog — la respuesta cruda de la mutación
-      // tiene product_name="" hasta que K17 se resuelva en backend.
-      qc.invalidateQueries({ queryKey: queryKeys.cart.current });
+    onSuccess: (cart) => {
+      qc.setQueryData(queryKeys.cart.current, cart);
     },
   });
 }
@@ -57,11 +54,8 @@ export function useUpdateCartItem(itemId: string) {
         method: "PUT",
         body: input,
       }),
-    onSuccess: () => {
-      // invalidateQueries (no setQueryData) porque el GET BFF enriquece
-      // product_name vía catalog — la respuesta cruda de la mutación
-      // tiene product_name="" hasta que K17 se resuelva en backend.
-      qc.invalidateQueries({ queryKey: queryKeys.cart.current });
+    onSuccess: (cart) => {
+      qc.setQueryData(queryKeys.cart.current, cart);
     },
   });
 }
@@ -74,11 +68,8 @@ export function useRemoveCartItem() {
       bffFetch<CartResponse>(`/api/cart/items/${encodeURIComponent(itemId)}`, {
         method: "DELETE",
       }),
-    onSuccess: () => {
-      // invalidateQueries (no setQueryData) porque el GET BFF enriquece
-      // product_name vía catalog — la respuesta cruda de la mutación
-      // tiene product_name="" hasta que K17 se resuelva en backend.
-      qc.invalidateQueries({ queryKey: queryKeys.cart.current });
+    onSuccess: (cart) => {
+      qc.setQueryData(queryKeys.cart.current, cart);
     },
   });
 }

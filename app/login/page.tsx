@@ -25,10 +25,12 @@ export default function LoginPage() {
     const [emailError, setEmailError] = useState("")
     const [passwordError, setPasswordError] = useState("")
 
-    // Redirigir si ya está autenticado
+    // Redirigir si ya está autenticado — honra ?redirect= si viene
     useEffect(() => {
         if (isAuthenticated) {
-            router.push("/")
+            const param = new URLSearchParams(window.location.search).get("redirect")
+            const dest = param && param.startsWith("/") && !param.startsWith("//") ? param : "/"
+            router.push(dest)
         }
     }, [isAuthenticated, router])
 

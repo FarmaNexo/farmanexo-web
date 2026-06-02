@@ -18,9 +18,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!body.product_id || !body.pharmacy_id || !body.quantity || body.quantity < 1) {
+  if (
+    !body.product_id ||
+    !body.pharmacy_id ||
+    typeof body.quantity !== "number" ||
+    !Number.isInteger(body.quantity) ||
+    body.quantity < 1
+  ) {
     return NextResponse.json(
-      { message: "product_id, pharmacy_id y quantity son requeridos", code: "ERR_VALIDATION" },
+      {
+        message:
+          "product_id y pharmacy_id son requeridos; quantity debe ser un entero ≥ 1",
+        code: "ERR_VALIDATION",
+      },
       { status: 400 }
     );
   }

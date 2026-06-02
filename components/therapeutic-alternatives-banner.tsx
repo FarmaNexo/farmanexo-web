@@ -6,20 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Beaker, Info, Sparkles } from "lucide-react";
 import { useProductAlternatives } from "@/lib/api/hooks/use-products";
+import { formatPEN as formatPrice } from "@/lib/utils";
 
 interface Props {
   /** ID del producto base (UUID). Si está undefined, no carga nada. */
   productId: string | undefined;
   /** Cuántas alternativas mostrar como máximo (default 6). */
   limit?: number;
-}
-
-function formatPrice(v: number) {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    minimumFractionDigits: 2,
-  }).format(v);
 }
 
 /**

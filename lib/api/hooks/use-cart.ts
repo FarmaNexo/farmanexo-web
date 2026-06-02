@@ -21,7 +21,14 @@ export function useCart() {
     queryKey: queryKeys.cart.current,
     queryFn: ({ signal }) => bffFetch<CartResponse>("/api/cart", { signal }),
     enabled: isAuthenticated,
-    retry: false,
+    // 1 retry para errores de red transitorios. NUNCA reintentar 4xx
+    // (especialmente 401 → es bloqueo de auth, no transient).
+    retry: (failureCount, error) => {
+      if (failureCount >= 1) return false;
+      if (error instanceof BffError && error.status >= 400 && error.status < 500) return false;
+      return true;
+    },
+    staleTime: 30_000,
   });
 }
 

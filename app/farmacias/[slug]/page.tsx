@@ -32,6 +32,7 @@ import {
   usePharmacyBySlug,
   usePharmacyInventory,
 } from "@/lib/api/hooks/use-pharmacies";
+import { formatPEN as formatPrice } from "@/lib/utils";
 
 const PharmacyLeafletMap = dynamic(
   () =>
@@ -40,14 +41,6 @@ const PharmacyLeafletMap = dynamic(
     ),
   { ssr: false }
 );
-
-function formatPrice(v: number) {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    minimumFractionDigits: 2,
-  }).format(v);
-}
 
 export default function FarmaciaDetailPage({
   params,

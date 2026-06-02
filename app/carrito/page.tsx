@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { queryKeys } from "@/lib/query/keys";
 import {
   Loader2,
   Minus,
@@ -38,17 +40,11 @@ import type {
   CartItemResponse,
   PharmacyGroupResponse,
 } from "@/lib/api/types";
-
-function formatPrice(value: number) {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    minimumFractionDigits: 2,
-  }).format(value);
-}
+import { formatPEN as formatPrice } from "@/lib/utils";
 
 export default function CarritoPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const { isAuthenticated, isLoading: authLoading } = useIsAuthenticated();
   const { data: cart, isLoading, isError, error } = useCart();
   const clearMutation = useClearCart();
@@ -89,7 +85,11 @@ export default function CarritoPage() {
               <EmptyDescription>{message}</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button onClick={() => window.location.reload()}>
+              <Button
+                onClick={() =>
+                  qc.refetchQueries({ queryKey: queryKeys.cart.current })
+                }
+              >
                 Reintentar
               </Button>
             </EmptyContent>

@@ -30,6 +30,19 @@ export function useIsAuthenticated() {
   };
 }
 
+/**
+ * Devuelve el destino seguro tras login: lee `?redirect=` del URL actual.
+ * Solo permite rutas internas (que empiecen con "/" y no con "//" para evitar
+ * redirect open). Cae a "/" si no hay redirect o es inválido.
+ */
+function getSafeRedirect(): string {
+  if (typeof window === "undefined") return "/";
+  const param = new URLSearchParams(window.location.search).get("redirect");
+  if (!param) return "/";
+  if (!param.startsWith("/") || param.startsWith("//")) return "/";
+  return param;
+}
+
 export function useLogin() {
   const qc = useQueryClient();
   const router = useRouter();
@@ -39,7 +52,7 @@ export function useLogin() {
       bffFetch<void>("/api/auth/login", { method: "POST", body: input }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: queryKeys.auth.me });
-      router.push("/");
+      router.push(getSafeRedirect());
     },
   });
 }

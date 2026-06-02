@@ -43,14 +43,7 @@ import {
 } from "@/components/near-me-toggle";
 import { OverpriceBadge } from "@/components/overprice-badge";
 import { AddToCartButton } from "@/components/add-to-cart-button";
-
-function formatPrice(v: number) {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    minimumFractionDigits: 2,
-  }).format(v);
-}
+import { formatPEN as formatPrice } from "@/lib/utils";
 
 export default function MedicamentoDetailPage({
   params,
@@ -77,7 +70,10 @@ export default function MedicamentoDetailPage({
     isLoading,
     error,
   } = useProductBySlug(slug);
-  const { data: availability } = useProductAvailability(
+  const {
+    data: availability,
+    isError: availabilityError,
+  } = useProductAvailability(
     product?.id,
     nearMe ? { lat: nearMe.lat, lng: nearMe.lng, radiusKm: nearMe.radiusKm } : undefined
   );
@@ -86,9 +82,17 @@ export default function MedicamentoDetailPage({
   // versión sin geo (cached por TanStack si el user la consultó antes).
   // Sirve para distinguir "no hay farmacias en tu radio" vs "no hay
   // disponibilidad real" y ofrecer el CTA correcto.
-  const { data: fallbackAvailability } = useProductAvailability(
+  const {
+    data: fallbackAvailability,
+    isError: fallbackAvailabilityError,
+  } = useProductAvailability(
     nearMe ? product?.id : undefined
   );
+
+  // Bug del audit P0-F2: si ambas queries fallan, antes mostrábamos "sin
+  // stock" — el usuario no podía distinguir error de red de producto agotado.
+  const availabilityFailed =
+    availabilityError && (!nearMe || fallbackAvailabilityError);
 
   const isFavorite = mounted && product ? favorites.includes(product.id) : false;
 
@@ -477,7 +481,30 @@ export default function MedicamentoDetailPage({
                 />
               </div>
 
-              {!priceInfo && nearMe && (
+              {availabilityFailed && (
+                <div
+                  className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 sm:p-5 text-center"
+                  role="alert"
+                >
+                  <p className="font-medium text-sm text-destructive">
+                    No pudimos consultar la disponibilidad en farmacias.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Es un problema temporal de conexión, no quiere decir que el producto esté agotado.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-3"
+                    onClick={() => window.location.reload()}
+                  >
+                    Reintentar
+                  </Button>
+                </div>
+              )}
+
+              {!availabilityFailed && !priceInfo && nearMe && (
                 <div
                   className="rounded-lg border border-dashed border-brand-teal/30 bg-brand-teal/5 p-4 sm:p-5 text-center"
                   role="status"
@@ -669,7 +696,7 @@ export default function MedicamentoDetailPage({
           {/* HU-015 — Alternativas terapéuticas con la misma DCI */}
           <TherapeuticAlternativesBanner productId={product.id} />
 
-          {!priceInfo && !nearMe && (
+          {!availabilityFailed && !priceInfo && !nearMe && (
             <Card className="mt-6 p-4 sm:p-6">
               <div className="flex items-center gap-3 text-muted-foreground">
                 <AlertCircle className="size-5 shrink-0" />

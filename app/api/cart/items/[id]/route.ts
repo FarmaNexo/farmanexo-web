@@ -22,9 +22,13 @@ export async function PUT(
     );
   }
 
-  if (!body.quantity || body.quantity < 1) {
+  if (
+    typeof body.quantity !== "number" ||
+    !Number.isInteger(body.quantity) ||
+    body.quantity < 1
+  ) {
     return NextResponse.json(
-      { message: "quantity debe ser mayor a 0", code: "ERR_VALIDATION" },
+      { message: "quantity debe ser un entero ≥ 1", code: "ERR_VALIDATION" },
       { status: 400 }
     );
   }

@@ -16,8 +16,6 @@ export default function RecoverPasswordPage() {
     const router = useRouter()
     const { isAuthenticated } = useIsAuthenticated()
 
-    // TODO(auth): conectar a un endpoint real cuando auth-service exponga /forgot-password.
-    // Hoy simulamos el flujo: el backend aún no tiene este endpoint.
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -53,11 +51,25 @@ export default function RecoverPasswordPage() {
 
         if (!validateEmail(email)) return
 
-        // Placeholder: siempre mostramos "éxito" sin filtrar si el email existe.
         setIsLoading(true)
-        await new Promise((r) => setTimeout(r, 600))
-        setIsLoading(false)
-        setSuccess(true)
+        setError(null)
+        try {
+            const res = await fetch("/api/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            })
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                throw new Error(data.message || "No se pudo procesar la solicitud")
+            }
+            // Respuesta genérica: no revelamos si el correo existe.
+            setSuccess(true)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "No se pudo procesar la solicitud")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     if (success) {
